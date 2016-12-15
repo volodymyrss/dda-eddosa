@@ -193,7 +193,7 @@ class BinBackgroundSpectrum(ddosa.DataAnalysis):
     input_events=ISGRIEvents
     input_scw=ScWData
 
-    version="v11"
+    version="v11.1"
 
     cached=True
     copy_cached_input=False
@@ -315,16 +315,14 @@ class BinBackgroundSpectrum(ddosa.DataAnalysis):
             rtkey="_rt_%i_%i"%(rtmin,rtlim)
 
             plot.p.figure()
-            pha2=evts['ISGRI_PHA2']
-            pha2+=random.randint(0,1000,pha2.shape[0])*0.001*1
+            pha2=evts['ISGRI_PHA2']+random.rand(evts.shape[0])
             h1=histogram(pha2[selection],bins=logspace(1,log10(2048),300))
             save("h1_PHA2%s.npy"%rtkey,h1)
             plot.p.plot(h1[1][1:],h1[0],label="PHA2")
             self.h1_pha2=ddosa.DataFile("h1_PHA2%s.npy"%rtkey)
             savetxt("h1_PHA2%s.txt"%rtkey,column_stack((h1[1][1:],h1[0])))
 
-            pha1=evts['ISGRI_PHA1']
-            pha1+=random.randint(0,1000,pha1.shape[0])*0.001*1
+            pha1=evts['ISGRI_PHA1']+random.rand(evts.shape[0])
             h1=histogram(pha1[selection],bins=logspace(1,log10(2048),300))
             plot.p.plot(h1[1][1:]/2,h1[0],label="PHA1/2")
             save("h1_PHA1%s.npy"%rtkey,h1)
@@ -2241,7 +2239,6 @@ class BinBackgroundMerged(ddosa.DataAnalysis):
 
     tag=""
 
-
     def correct_energy_p3(self,d,t):
         return d
 
@@ -2357,6 +2354,9 @@ class BinBackgroundMerged(ddosa.DataAnalysis):
     def get_h2_pha1_pi(self):
         print "opening",self.h2_pha1_pi.path
         return  pyfits.open(self.h2_pha1_pi.get_cached_path())[0].data
+    
+    def get_h2(self):
+        return self.get_h2_pha1_pi()
 
 class CorrectBipar(ddosa.DataAnalysis):
     input_lut2=FinalizeLUT2
@@ -3328,7 +3328,8 @@ class Spectrum1DVirtual(da.DataAnalysis):
         return h1_50[0],h1_116[0]
 
     def get_h2(self):
-        return self.input_binned.get_h2_energy_pi_300()
+        return self.input_binned.get_h2()
+        #return self.input_binned.get_h2_energy_pi_300()
 
     def get_exposure(self):
         return self.input_scw.get_telapse()
