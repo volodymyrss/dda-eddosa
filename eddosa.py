@@ -7,6 +7,8 @@ import fit_ng
 import heaspa
 import pprint
 
+import pilton
+
 from copy import deepcopy
 from scipy import ndimage,interpolate
 
@@ -193,7 +195,7 @@ class BinBackgroundSpectrum(ddosa.DataAnalysis):
     input_events=ISGRIEvents
     input_scw=ScWData
 
-    version="v11.1"
+    version="v11"
 
     cached=True
     copy_cached_input=False
@@ -315,14 +317,16 @@ class BinBackgroundSpectrum(ddosa.DataAnalysis):
             rtkey="_rt_%i_%i"%(rtmin,rtlim)
 
             plot.p.figure()
-            pha2=evts['ISGRI_PHA2']+random.rand(evts.shape[0])
+            pha2=evts['ISGRI_PHA2'].astype(float)
+            pha2+=random.rand(pha2.shape[0])
             h1=histogram(pha2[selection],bins=logspace(1,log10(2048),300))
             save("h1_PHA2%s.npy"%rtkey,h1)
             plot.p.plot(h1[1][1:],h1[0],label="PHA2")
             self.h1_pha2=ddosa.DataFile("h1_PHA2%s.npy"%rtkey)
             savetxt("h1_PHA2%s.txt"%rtkey,column_stack((h1[1][1:],h1[0])))
 
-            pha1=evts['ISGRI_PHA1']+random.rand(evts.shape[0])
+            pha1=evts['ISGRI_PHA1'].astype(float)
+            pha1+=random.rand(pha1.shape[0])
             h1=histogram(pha1[selection],bins=logspace(1,log10(2048),300))
             plot.p.plot(h1[1][1:]/2,h1[0],label="PHA1/2")
             save("h1_PHA1%s.npy"%rtkey,h1)
@@ -443,7 +447,7 @@ class Bipar(da.DataAnalysis):
 
 class FindPeaks(ddosa.DataAnalysis):
     input_histograms=Bipar
-    version="v5"
+    version="v5.1"
 
     cached=True
 
@@ -454,12 +458,17 @@ class FindPeaks(ddosa.DataAnalysis):
         line1_energy=59.9
         line2_energy=511.0
 
-        if hasattr(self.input_histograms,'h1_pha1'):
+        if hasattr(self.input_histograms,'h1_pha1') and False:
             h1,ee=load(self.input_histograms.h1_pha1.path)
+            ec=(ee[:-1]+ee[1:])/2.
         else:
-            h1=pyfits.open(self.input_histograms.h2_pha1_pi.get_path())[0].data.sum(axis=0)
-            ee=(arange(h1.shape[0]+1))*0.5
-        ec=(ee[:-1]+ee[1:])/2.
+            h1=pyfits.open(self.input_histograms.h2_pha1_pi.get_path())[0].data.sum(axis=1)
+            ee=(arange(h1.shape[0]+1))#*0.5
+            ec=(ee[:-1]+ee[1:])/2.
+            h1=h1*ec
+
+        print ec
+        print h1
 
         print ec.shape,ee.shape,h1.shape
 
@@ -583,6 +592,12 @@ class LocateBiparModel(ddosa.DataAnalysis):
         for n,v in self.bipar_attributes.items():
             setattr(bm,n,v)
         return BiparModel(use_bipar_model=bm)
+
+class PrintBiparModel(ddosa.DataAnalysis):
+    input_biparmodel=LocateBiparModel
+
+    def main(self):
+        print self.input_biparmodel.get_version()
 
 class Fit3DModel(ddosa.DataAnalysis):
     input_p=FindPeaks
@@ -2239,6 +2254,7 @@ class BinBackgroundMerged(ddosa.DataAnalysis):
 
     tag=""
 
+
     def correct_energy_p3(self,d,t):
         return d
 
@@ -2354,9 +2370,6 @@ class BinBackgroundMerged(ddosa.DataAnalysis):
     def get_h2_pha1_pi(self):
         print "opening",self.h2_pha1_pi.path
         return  pyfits.open(self.h2_pha1_pi.get_cached_path())[0].data
-    
-    def get_h2(self):
-        return self.get_h2_pha1_pi()
 
 class CorrectBipar(ddosa.DataAnalysis):
     input_lut2=FinalizeLUT2
@@ -2580,7 +2593,7 @@ class GenerateLUT2(ddosa.DataAnalysis):
     # config fields
     generate_lut2_3d=False
     resolution_factor=0.1
-    resolution_step=10 #!!
+    resolution_step=1 #!!
     response_grouping=0.01
 
     writer3d=True
@@ -2672,7 +2685,7 @@ class GenerateLUT2(ddosa.DataAnalysis):
 
 class CubeBins:
     def __init__(self):
-        self.emin,self.emax=(lambda x:(x['E_MIN'],x['E_MAX']))(pyfits.open("/Integral/data/resources/rmf_256bins.fits")['EBOUNDS'].data)
+        self.emin,self.emax=(lambda x:(x['E_MIN'],x['E_MAX']))(pyfits.open(os.environ['INTEGRAL_DATA']+"/resources/rmf_256bins.fits")['EBOUNDS'].data)
         self.energies=(self.emin+self.emax)/2.
         self.denergies=(self.emax-self.emin)/2.
         self.pha=self.energies*2
@@ -2853,6 +2866,82 @@ class FinalizeLUT2(ddosa.DataAnalysis):
             fd[1].data[i]=lut2.transpose()[:,::2]*30.
         fd.writeto("lut2_3d.fits",clobber=True)
         return "lut2_3d.fits"
+
+
+class ISGRI_RISE_MOD(ddosa.DataAnalysis):
+    input_lut2=FinalizeLUT2
+    input_rev=Revolution
+
+    cached=True
+
+    def main(self):
+        import resttimesystem as ts
+        out_fn="isgr_rise_mod_%.4i.fits"%int(self.input_rev.input_revid.str()) #//
+
+        dc=pilton.heatool("dal_create")
+        dc["obj_name"]=out_fn
+        dc["template"]="ISGR-RISE-MOD.tpl"
+        remove_withtemplate(dc["obj_name"].value+"("+dc["template"].value+")")
+        dc.run()
+
+        val_start_ijd,val_stop_ijd=map(float,ts.converttime("REVNUM",self.input_rev.input_revid.str(),"IJD").split()[1:])
+        val_start_utc=ts.converttime("IJD",val_start_ijd,"UTC")
+        val_stop_utc=ts.converttime("IJD",val_stop_ijd,"UTC")
+
+        f=pyfits.open(out_fn)
+        d=pyfits.open(self.input_lut2.lut2_1d.get_path())[0]
+
+        f[1].data=zeros(2048,dtype=f[1].data.dtype)
+        f[1].data['CHANNEL']=arange(2048)
+        f[1].data['ENERGY']=d.data[:,30]
+        f[1].data['CORR']=d.data[:,:]/outer(d.data[:,30],ones(256))
+
+        f[1].header['ORIGIN']="ISDC"
+        f[1].header['VERSION']=1
+        f[1].header['FILENAME']=out_fn
+        f[1].header['LOCATN']=out_fn
+        f[1].header['RESPONSI']="Volodymyr Savchenko"
+        f[1].header['STRT_VAL']=val_start_utc
+        f[1].header['END_VAL']=val_stop_utc
+        f[1].header['VSTART']=val_start_ijd
+        f[1].header['VSTOP']=val_stop_ijd
+        #f.writeto("/sps/integral/data/ic/ic_snapshot_20140321/ic/ibis/mod/isgr_rise_mod_0001.fits",clobber=True)
+        f.writeto(out_fn,clobber=True)
+
+        self.isgr_rise_mod=DataFile(out_fn)
+
+class ISGRI_RISE_MOD_IDX(ddosa.DataAnalysis):
+    def main(self):
+        dc=pilton.heatool("dal_create")
+        dc["obj_name"]="/sps/integral/data/ic/ic_snapshot_20140321/idx/ic/ISGR-RISE-MOD-IDX.fits"
+        dc["template"]="ISGR-RISE-MOD-IDX.tpl"
+        remove_withtemplate(dc["obj_name"].value+"("+dc["template"].value+")")
+        dc.run()
+
+        da=pilton.heatool("dal_attach")
+        da['Parent']="/sps/integral/data/ic/ic_snapshot_20140321/idx/ic/ISGR-RISE-MOD-IDX.fits"
+        da['Child1']="/sps/integral/data/ic/ic_snapshot_20140321/ic/ibis/mod/isgr_rise_mod_0001.fits"
+        da.run()
+
+        f=pyfits.open(da['Parent'].value)
+        f[1].data[0]['VERSION']=1
+        f[1].data[0]['VSTART']=0
+        f[1].data[0]['VSTOP']=300000
+        f.writeto(da['Parent'].value,clobber=True)
+
+        dv=pilton.heatool("dal_verify")
+        dv["indol"]="/sps/integral/data/ic/ic_snapshot_20140321/idx/ic/ISGR-RISE-MOD-IDX.fits"
+        dv['checksums']="yes"
+        dv['backpointers']="yes"
+        dv['detachother']="yes"
+        dv.run()
+
+        da=pilton.heatool("dal_attach")
+        da['Parent']="/sps/integral/data/ic/ic_snapshot_20140321/idx/ic/ic_master_file.fits"
+        da['Child1']="/sps/integral/data/ic/ic_snapshot_20140321/idx/ic/ISGR-RISE-MOD-IDX.fits"
+        da.run()
+
+        pass
 
 
 class LineBipars(ddosa.DataAnalysis):
@@ -3328,8 +3417,11 @@ class Spectrum1DVirtual(da.DataAnalysis):
         return h1_50[0],h1_116[0]
 
     def get_h2(self):
-        return self.input_binned.get_h2()
-        #return self.input_binned.get_h2_energy_pi_300()
+        try:
+            return self.input_binned.get_h2_energy_pi_300()
+        except:
+            return pyfits.open(self.input_binned.h2_energy_pi.get_path())[0].data
+
 
     def get_exposure(self):
         return self.input_scw.get_telapse()
@@ -4186,7 +4278,7 @@ class EfficiencyUpdate(da.DataAnalysis):
             savetxt("arf_%s.txt"%key,arf)
             #savetxt("arf_%s.txt"%key,column_stack((arf)))
 
-            #/Integral/data/ic_collection/ic_tree-20130108/ic/ibis/rsp/isgr_arf_rsp_0031.fits 
+            #/Integral/data/ic_collection/ic_tree-20130107/ic/ibis/rsp/isgr_arf_rsp_0031.fits 
 
             #arf_hdu.data['SPECRESP']=arf_l2_interpolated
             #arf_hdu.writeto("arf_%s_lut2.fits"%key,clobber=True)
@@ -4425,7 +4517,8 @@ class BinEventsVirtual(ddosa.BinEventsVirtual):
     ltpick=None
     ltfrac=None
 
-    ii_shadow_build_binary=os.environ['COMMON_INTEGRAL_SOFTDIR']+"/ii_shadow_build/ii_shadow_build_osa102le/ii_shadow_build"
+    #ii_shadow_build_binary=os.environ['COMMON_INTEGRAL_SOFTDIR']+"/ii_shadow_build/ii_shadow_build_osa102le/ii_shadow_build"
+    ii_shadow_build_binary="ii_shadow_build"
     #ii_shadow_build_binary=os.environ['COMMON_INTEGRAL_SOFTDIR']+"/ii_shadow_build/ii_shadow_build_lt/ii_shadow_build"
 
     def get_version(self):
@@ -5035,3 +5128,5 @@ class StudySpectrumRevP2(ddosa.DataAnalysis):
         savetxt("energy_1d_%s.txt"%self.tag,column_stack((ebins[:-1],h1,h1**0.5)))
         plot.p.loglog()
         plot.plot("energy_%s.png"%self.tag)
+
+
