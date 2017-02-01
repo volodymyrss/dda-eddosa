@@ -584,7 +584,7 @@ class LocateBiparModel(ddosa.DataAnalysis):
 
 
     #bipar_attributes={}
-    bipar_attributes={'rtbump':True}
+    bipar_attributes={'rtbump':False}
 
     def main(self):
         #bm = imp.load_source('bipar_model', '/home/savchenk/eddosa_tools/lut2model/python/bipar_model.py') # hc!
