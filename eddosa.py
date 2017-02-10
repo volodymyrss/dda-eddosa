@@ -588,7 +588,7 @@ class LocateBiparModel(ddosa.DataAnalysis):
 
     def main(self):
         #bm = imp.load_source('bipar_model', '/home/savchenk/eddosa_tools/lut2model/python/bipar_model.py') # hc!
-        bm = imp.load_source('bipar_model', '/sps/integral/analysis/savchenk/eddosa/eddosa_tools/lut2model/python/bipar_model.py') # hc!
+        bm = imp.load_source('bipar_model', os.environ['EDDOSA_TOOLS_DIR']+'/lut2model/python/bipar_model.py') # hc!
         for n,v in self.bipar_attributes.items():
             setattr(bm,n,v)
         return BiparModel(use_bipar_model=bm)
