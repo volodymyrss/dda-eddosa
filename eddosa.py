@@ -599,11 +599,22 @@ class PrintBiparModel(ddosa.DataAnalysis):
     def main(self):
         print self.input_biparmodel.get_version()
 
+class LEComplexBias(ddosa.DataAnalysis):
+    bias=0
+    
+    def is_noanalysis(self):
+        if self.bias==0:
+            return True
+        return False
+
+    _da_settings=['bias']
+
 class Fit3DModel(ddosa.DataAnalysis):
     input_p=FindPeaks
     input_fit=Fit1DSpectrumRev # or bipar
     #input_bkgspec=BinBackgroundSpectrum
     input_histograms=Bipar
+    input_bias=LEComplexBias
 
     watched_analysis=True
 
@@ -620,7 +631,6 @@ class Fit3DModel(ddosa.DataAnalysis):
     only_estimation=False
     save_corrected_est=False
 
-    le_complex_bias=0
 
     def get_version(self):
         version=self.get_signature()+"."+self.version
@@ -630,8 +640,6 @@ class Fit3DModel(ddosa.DataAnalysis):
             version+=".saveest"
         if self.estimate_energy_power!=0:
             version+=".estpower%.5lg"%self.estimate_energy_power
-        if self.le_complex_bias!=0:
-            version+=".lecomplexbias%.5lg"%self.le_complex_bias
         return version
 
     #cache=cache_local
@@ -761,6 +769,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         
 
     def main(self):
+        self.le_complex_bias=self.input_bias.bias
 # load
         self.load_data()
 
