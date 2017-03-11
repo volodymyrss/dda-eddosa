@@ -620,6 +620,8 @@ class Fit3DModel(ddosa.DataAnalysis):
     only_estimation=False
     save_corrected_est=False
 
+    le_complex_bias=0
+
     def get_version(self):
         version=self.get_signature()+"."+self.version
         if self.only_estimation:
@@ -628,6 +630,8 @@ class Fit3DModel(ddosa.DataAnalysis):
             version+=".saveest"
         if self.estimate_energy_power!=0:
             version+=".estpower%.5lg"%self.estimate_energy_power
+        if self.le_complex_bias!=0:
+            version+=".lecomplexbias%.5lg"%self.le_complex_bias
         return version
 
     #cache=cache_local
@@ -898,7 +902,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         data_corrected=zeros_like(data)
         data_uncorrected=zeros_like(data)
         
-        self.energy_le=59.0
+        self.energy_le=59.0+self.le_complex_bias
         self.energy_he=511.0
         
         energies=linspace(0,1024,pha_1d.shape[0])
@@ -1003,8 +1007,8 @@ class Fit3DModel(ddosa.DataAnalysis):
         data_uncorrected=zeros_like(data)
 
         energies=linspace(0,1024,pha_1d.shape[0])
-        energy_le=59.5
-        energy_he=511.0
+        energy_le=self.energy_le
+        energy_he=self.energy_he
 
         interp_le_line_profile=UnivariateSpline(rt_prof_le,model_prof_le,k=1)
         interp_he_line_profile=UnivariateSpline(rt_prof_he,model_prof_he,k=1)
@@ -1171,7 +1175,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         data_corrected=zeros_like(data)
         data_uncorrected=zeros_like(data)
         
-        self.energy_le=59.0
+        self.energy_le=59.0+self.le_complex_bias
         self.energy_he=511.0
         energy_he=self.energy_he
         energy_le=self.energy_le
@@ -1230,7 +1234,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
 
         if self.optimize_go:
-            energies=[59.5,511]
+            energies=[self.energy_le,self.energy_he]
 
             channels=self.input_biparmodel.bipar_model.get_chan(self.detector,energies,render_model="default")
 
@@ -1240,7 +1244,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
             open('fit.txt', 'a').write('%i' % self.nattempts + ' ' + ' '.join([ '%.5lg' % p for p in [value] + list(pars) + list(renergies) ]) + ' ' + str([self.detector]) + '\n')
         elif self.optimize_shape:
-            energies=[59.,511.]
+            energies=[self.energy_le,self.energy_he]
 
             mg=self.compute_model(maxrt=self.maxrt, minrt=self.minrt)
 
@@ -1504,6 +1508,10 @@ class Fit3DModel(ddosa.DataAnalysis):
 
     def le_model(self,legain=True):
         energies=[57.9817,  59.3182,  67.2443,  72.8042,   74.9694,  84.9360]
+
+        for i in range(len(energies)):
+            energies[i]+=self.le_complex_bias
+
         fractions_0_1=[0.365,0.635]
 
         e0=self.monoenergetic_model(energies[0],resolutionfactor=1.)
