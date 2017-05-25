@@ -592,7 +592,7 @@ class LocateBiparModel(ddosa.DataAnalysis):
 
     def main(self):
         #bm = imp.load_source('bipar_model', '/home/savchenk/eddosa_tools/lut2model/python/bipar_model.py') # hc!
-        bm = imp.load_source('bipar_model', os.environ['EDDOSA_TOOLS_ROOT']+'/lut2model/python/bipar_model.py') # hc!
+        bm = imp.load_source('bipar_model', os.environ['EDDOSA_TOOLS_DIR']+'/lut2model/python/bipar_model.py') # hc!
         for n,v in self.bipar_attributes.items():
             setattr(bm,n,v)
         return BiparModel(use_bipar_model=bm)
@@ -603,11 +603,22 @@ class PrintBiparModel(ddosa.DataAnalysis):
     def main(self):
         print self.input_biparmodel.get_version()
 
+class LEComplexBias(ddosa.DataAnalysis):
+    bias=0
+    
+    def is_noanalysis(self):
+        if self.bias==0:
+            return True
+        return False
+
+    _da_settings=['bias']
+
 class Fit3DModel(ddosa.DataAnalysis):
     input_p=FindPeaks
     input_fit=Fit1DSpectrumRev # or bipar
     #input_bkgspec=BinBackgroundSpectrum
     input_histograms=Bipar
+    input_bias=LEComplexBias
 
     watched_analysis=True
 
@@ -623,6 +634,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         
     only_estimation=False
     save_corrected_est=False
+
 
     def get_version(self):
         version=self.get_signature()+"."+self.version
@@ -761,6 +773,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         
 
     def main(self):
+        self.le_complex_bias=self.input_bias.bias
 # load
         self.load_data()
 
@@ -902,7 +915,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         data_corrected=zeros_like(data)
         data_uncorrected=zeros_like(data)
         
-        self.energy_le=59.0
+        self.energy_le=59.0+self.le_complex_bias
         self.energy_he=511.0
         
         energies=linspace(0,1024,pha_1d.shape[0])
@@ -1007,8 +1020,8 @@ class Fit3DModel(ddosa.DataAnalysis):
         data_uncorrected=zeros_like(data)
 
         energies=linspace(0,1024,pha_1d.shape[0])
-        energy_le=59.5
-        energy_he=511.0
+        energy_le=self.energy_le
+        energy_he=self.energy_he
 
         interp_le_line_profile=UnivariateSpline(rt_prof_le,model_prof_le,k=1)
         interp_he_line_profile=UnivariateSpline(rt_prof_he,model_prof_he,k=1)
@@ -1175,7 +1188,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         data_corrected=zeros_like(data)
         data_uncorrected=zeros_like(data)
         
-        self.energy_le=59.0
+        self.energy_le=59.0+self.le_complex_bias
         self.energy_he=511.0
         energy_he=self.energy_he
         energy_le=self.energy_le
@@ -1234,7 +1247,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
 
         if self.optimize_go:
-            energies=[59.5,511]
+            energies=[self.energy_le,self.energy_he]
 
             channels=self.input_biparmodel.bipar_model.get_chan(self.detector,energies,render_model="default")
 
@@ -1244,7 +1257,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
             open('fit.txt', 'a').write('%i' % self.nattempts + ' ' + ' '.join([ '%.5lg' % p for p in [value] + list(pars) + list(renergies) ]) + ' ' + str([self.detector]) + '\n')
         elif self.optimize_shape:
-            energies=[59.,511.]
+            energies=[self.energy_le,self.energy_he]
 
             mg=self.compute_model(maxrt=self.maxrt, minrt=self.minrt)
 
@@ -1508,6 +1521,10 @@ class Fit3DModel(ddosa.DataAnalysis):
 
     def le_model(self,legain=True):
         energies=[57.9817,  59.3182,  67.2443,  72.8042,   74.9694,  84.9360]
+
+        for i in range(len(energies)):
+            energies[i]+=self.le_complex_bias
+
         fractions_0_1=[0.365,0.635]
 
         e0=self.monoenergetic_model(energies[0],resolutionfactor=1.)
