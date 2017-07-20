@@ -39,12 +39,12 @@ import sys
 import gzip
 
 #ddosa.dataanalysis.LogStream(None,lambda x:any([y in x for y in ['heatool','top']]))
-ddosa.dataanalysis.LogStream(None,lambda x:True)
-ddosa.dataanalysis.LogStream("alllog.txt",lambda x:True)
+ddosa.dataanalysis.printhook.LogStream(None,lambda x:True)
+ddosa.dataanalysis.printhook.LogStream("alllog.txt",lambda x:True)
 
 plot.showg=False
 
-cache_local=dataanalysis.MemCache()
+cache_local=dataanalysis.Cache
 
 from bcolors import render
 
@@ -715,7 +715,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
         det_he=copy(det)
         #det_he[0:he_min_pha]=0
-        det_he[he_max_pha:]=0
+        det_he[int(he_max_pha):]=0
         det_he[pha_coord<he_min_pha-rt_coord*he_slope_guess]=0
         
         he_line_profile=[]
@@ -734,7 +734,7 @@ class Fit3DModel(ddosa.DataAnalysis):
                 
 
             print rt_i,peak_pha_i
-            he_line_profile.append([rt_i,peak_pha_i,det_he[peak_pha_i,rt_i]])
+            he_line_profile.append([rt_i,peak_pha_i,det_he[int(peak_pha_i),int(rt_i)]])
 
             
         
