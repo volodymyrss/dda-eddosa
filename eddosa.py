@@ -3,11 +3,8 @@ from ddosa import *
 
 #import ltdata
 
-try:
-    import fit_ng
-    import heaspa
-except:
-    pass
+import fit_ng
+import heaspa
 
 import pprint
 
@@ -18,7 +15,7 @@ from scipy import ndimage,interpolate
 
 import dataanalysis as da
         
-import pyfits
+import astropy.io.fits as pyfits
 from numpy import *
         
 from scipy.ndimage.filters import gaussian_filter
@@ -27,7 +24,6 @@ from scipy.ndimage.filters import gaussian_filter1d as g1d
 import plot
 import gzip,glob
         
-import pyfits
 from numpy import *
 import numpy as np # transition to this...
 from scipy import stats
