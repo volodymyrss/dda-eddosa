@@ -2706,7 +2706,12 @@ class GenerateLUT2(ddosa.DataAnalysis):
 
 class CubeBins:
     def __init__(self):
-        self.emin,self.emax=(lambda x:(x['E_MIN'],x['E_MAX']))(pyfits.open(os.environ['INTEGRAL_DATA']+"/resources/rmf_256bins.fits")['EBOUNDS'].data)
+        if 'ISGRI_RMF_256' in os.environ:
+            isgri_rmf=pyfits.open(os.environ["ISGRI_RMF_256"])
+        else:
+            isgri_rmf=pyfits.open(os.environ["INTEGRAL_DATA"]+"/resources/rmf_256bins.fits")
+
+        self.emin,self.emax=(lambda x:(x['E_MIN'],x['E_MAX']))(isgri_rmf['EBOUNDS'].data)
         self.energies=(self.emin+self.emax)/2.
         self.denergies=(self.emax-self.emin)/2.
         self.pha=self.energies*2
@@ -2721,6 +2726,7 @@ class VerifyLines(ddosa.DataAnalysis):
     input_correctedlines=FitLocalLinesRevCorrected
 
     factor=3
+    syst_percent=5
 
     copy_cached_input=False
 
@@ -2729,7 +2735,7 @@ class VerifyLines(ddosa.DataAnalysis):
         print "HE line",he_line
         x0,x1,x2=he_line['centroid'],he_line['x0_lower_limit'],he_line['x0_upper_limit']
         dx=(x2-x1)/2.
-        if abs(x0-511.)>dx*self.factor:
+        if abs(x0-511.)>dx*self.factor+self.syst_percent*511./100.:
             raise BadLineFit()
         print "decent line fit",x0,dx
         
