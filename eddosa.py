@@ -621,7 +621,7 @@ class Fit3DModel(ddosa.DataAnalysis):
     input_biparmodel=LocateBiparModel
     input_detector_cond=DetectorConditions
 
-    version="v14.2"
+    version="v14.3"
     #version="v14.1"
 
     estimate_energy_power=0
@@ -735,8 +735,16 @@ class Fit3DModel(ddosa.DataAnalysis):
             
         
         # search for le peak
-        le_min_pha=70
-        le_max_pha=140
+        le_min_pha_early_guess=70
+        le_max_pha_early_guess=140
+
+        range_reduction_factor=self.input_p.max1/(60.*2.)
+
+        le_min_pha=le_min_pha_early_guess*range_reduction_factor
+        le_max_pha=le_max_pha_early_guess*range_reduction_factor
+
+        print("will search for LE line in PHA range",le_min_pha,le_max_pha,"LE gain loss factor",range_reduction_factor)
+
         le_min_rt=20
         le_max_rt=105
 
