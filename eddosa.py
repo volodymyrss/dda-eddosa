@@ -749,8 +749,8 @@ class Fit3DModel(ddosa.DataAnalysis):
         le_max_rt=105
 
         det_le=copy(data)
-        det_le[0:le_min_pha]=0
-        det_le[le_max_pha:]=0
+        det_le[0:int(le_min_pha)]=0
+        det_le[int(le_max_pha):]=0
         
         le_line_profile=[]
         for rt_i in arange(rt_coord.shape[1]):
