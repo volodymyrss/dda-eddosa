@@ -600,7 +600,7 @@ class PrintBiparModel(ddosa.DataAnalysis):
         print self.input_biparmodel.get_version()
 
 class LEComplexBias(ddosa.DataAnalysis):
-    bias=0
+    bias=1
     
     def is_noanalysis(self):
         if self.bias==0:
