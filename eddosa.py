@@ -2763,9 +2763,14 @@ class FinalizeLUT2(ddosa.DataAnalysis):
         v=self.get_signature()+".x"
         if self.corr is None:
             return v+"vbase5.2"
-        return v+"corr"+self.corr
+
+        if self.corr!="pb3":
+            return v+"corr"+self.corr
+
+        return v+"_corr"+self.corr+".%.5lg"%self.corr_par
 
     corr=None
+    corr_par=1.
 
     def interpolate(self,ph,ph1,l1,dl1,ph2,l2,dl2):
         return l1+(l2-l1)/(ph2-ph1)*(ph-ph1)
@@ -2873,6 +2878,19 @@ class FinalizeLUT2(ddosa.DataAnalysis):
             m=l2f<59.
             l2f[m]=(l2f+((l2f-59.)/59.)**2*6)[m]
             lut2=l2f.reshape(lut2.shape)
+
+
+        if self.corr=="pb3":
+            def rf(en):
+                return en-self.corr_par*10./(1.+(en/59)**2)
+
+            def f(en):
+                return rf(en)-rf(59)+59
+
+            l2f=lut2.flatten()
+            l2f=f(l2f)
+            lut2=l2f.reshape(lut2.shape)
+
 
         nf="lut2_1d_final.fits"
 
