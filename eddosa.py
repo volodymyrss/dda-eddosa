@@ -1,5 +1,6 @@
 import ddosa
 from ddosa import *
+import pandas as pd
 
 #import ltdata
 
@@ -2020,6 +2021,9 @@ class LUT2FromFile(DataAnalysis):
 class FinalizeLUT2(da.DataAnalysis):
     pass
 
+class FinalizeLUT2P4(da.DataAnalysis):
+    pass
+
 
 class ibis_isgr_energy_scw(DataAnalysis):
     cached=False
@@ -2072,12 +2076,17 @@ class ibis_isgr_energy_scw(DataAnalysis):
 
         self.output_events=DataFile("isgri_events_corrected_scw2.fits")
 
-
-# new spectra etc
-
 class ibis_isgr_evts_tag_scw(ddosa.ibis_isgr_evts_tag):
     cached=False
     input_events_corrected=ibis_isgr_energy_scw
+
+
+class ibis_isgr_energy_scw_P4(ibis_isgr_energy_scw):
+    input_lut2 = FinalizeLUT2P4
+
+class ibis_isgr_evts_tag_scw_P4(ibis_isgr_evts_tag_scw):
+    cached=False
+    input_events_corrected=ibis_isgr_energy_scw_P4
 
 class VerifyLines(ddosa.DataAnalysis):
     pass
@@ -2098,6 +2107,8 @@ class ISGRIEventsScW(ddosa.ISGRIEvents):
     def main(self):
         self.events=self.input_evttag.output_events
 
+class ISGRIEventsScWP4(da.DataAnalysis):
+    pass
 
 class BinBackgroundSpectrumP2(BinBackgroundSpectrum):
     input_events=ISGRIEventsScW
@@ -2755,6 +2766,8 @@ class FinalizeLUT2(ddosa.DataAnalysis):
     input_lut2=GenerateLUT2
     input_rev=Revolution
 
+    #input_finelinecorr=FitLocalLinesRevCorrected
+
     copy_cached_input=False
 
     cached=True
@@ -2891,6 +2904,9 @@ class FinalizeLUT2(ddosa.DataAnalysis):
             l2f=f(l2f)
             lut2=l2f.reshape(lut2.shape)
 
+        l2f = lut2.flatten()
+        l2f = self.fine_correction(l2f)
+        lut2 = l2f.reshape(lut2.shape)
 
         nf="lut2_1d_final.fits"
 
@@ -2904,6 +2920,9 @@ class FinalizeLUT2(ddosa.DataAnalysis):
 
         self.lut2_1d=da.DataFile(nf)
 
+    def fine_correction(self,en):
+        return en
+
     def lut2_1d_to_3d(self):
         # copied from GLT amd file!
         print "converting from 1d lut2"
@@ -2916,6 +2935,23 @@ class FinalizeLUT2(ddosa.DataAnalysis):
         fd.writeto("lut2_3d.fits",clobber=True)
         return "lut2_3d.fits"
 
+class FinalizeLUT2P4(FinalizeLUT2):
+    input_finelinecorr=FitLocalLinesRevCorrected
+
+    def fine_correction(self,en):
+        lines=pd.read_csv(getattr(self.input_finelinecorr,'local_lines_fullrt_fn').open(), delim_whitespace=True)
+        print(lines)
+
+        le_x0 = lines.bestfit_x0.iloc[0]
+        he_x0 = lines.bestfit_x0.iloc[1]
+        le_model=59.
+        he_model=511.
+
+        print("applying final fine post correction:", 1./(he_x0-le_x0)*(he_model-le_model), le_model-le_x0)
+
+        new_en=le_model+(en-le_x0)/(he_x0-le_x0)*(he_model-le_model)
+
+        return new_en
 
 class ISGRI_RISE_MOD(ddosa.DataAnalysis):
     input_lut2=FinalizeLUT2
@@ -4532,6 +4568,10 @@ class BinBackgroundSpectrumP3(BinBackgroundSpectrum):
     input_events=FineEnergyCorrection
     tag="P3"
 
+class BinBackgroundSpectrumP4(BinBackgroundSpectrum):
+    input_events=ISGRIEventsScWP4
+    tag="P3"
+
 class Spectrum1DP3(Spectrum1D):
     input_binned=BinBackgroundSpectrumP3
 
@@ -4550,6 +4590,9 @@ class ISGRIEventsFinal(da.DataAnalysis):
 
     def main(self):
         return self.events
+
+class ISGRIEventsScWP4(ISGRIEventsScW):
+    input_evttag = ibis_isgr_evts_tag_scw_P4
 
 class BinEventsVirtual(ddosa.BinEventsVirtual):
     input_events=ISGRIEventsFinal
