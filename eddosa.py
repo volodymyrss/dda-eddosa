@@ -2093,7 +2093,7 @@ class VerifyLines(ddosa.DataAnalysis):
 
 class ISGRIEventsScW(ddosa.ISGRIEvents):
     input_verifylines=VerifyLines
-    input_evttag=ibis_isgr_energy_scw
+    input_evttag=ibis_isgr_energy_scw_P4
     #input_evttag=ibis_isgr_evts_tag_scw
 
     cached=True
