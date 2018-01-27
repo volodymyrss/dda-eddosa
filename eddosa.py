@@ -2950,7 +2950,7 @@ class FinalizeLUT2P4(FinalizeLUT2):
     input_finelinecorr=FitLocalLinesRevCorrected
 
     p4origin="centroid"
-    p4le="v3"
+    p4le="v4"
     
     def get_version(self):
         v=FinalizeLUT2.get_version(self)
@@ -2971,27 +2971,33 @@ class FinalizeLUT2P4(FinalizeLUT2):
         print("applying final fine post correction:", 1./(he_x0-le_x0)*(he_model-le_model), le_model-le_x0)
 
         vle=30
+        new_vle=25
 
-        def rf(_en):
-            return _en-self.corr_par*10./(1.+(_en/59)**2)
+
+        def rf(_en,tuned_par):
+            return _en-self.corr_par*tuned_par*10./(1.+(_en/59)**2)
         
         def transform_norf(_en):
             return le_model+(_en-le_x0)/(he_x0-le_x0)*(he_model-le_model)
 
-        def transform(_en):
-            return le_model+(rf(_en)-rf(le_x0))/(rf(he_x0)-rf(le_x0))*(he_model-le_model)
+        def transform(_en,tuned_par):
+            return le_model+(rf(_en,tuned_par)-rf(le_x0,tuned_par))/(rf(he_x0,tuned_par)-rf(le_x0,tuned_par))*(he_model-le_model)
+
+        tuned_par_fitted=min([[abs(rf(vle,tuned_par)-new_vle),tuned_par] for tuned_par in np.logspace(-1,1,100)])[1]
+
+        print("tuned par",tuned_par_fitted)
 
         #def transform(_en):
         #    return f(transform_fixlines(_en))
 
-        print("transform",vle,"=>",transform(vle))
-        print("transform",le_x0,"=>",transform(le_x0))
-        print("transform",he_x0,"=>",transform(he_x0))
+        print("transform",vle,"=>",transform(vle,tuned_par_fitted))
+        print("transform",le_x0,"=>",transform(le_x0,tuned_par_fitted))
+        print("transform",he_x0,"=>",transform(he_x0,tuned_par_fitted))
         print("transform no rf",vle,"=>",transform_norf(vle))
         print("transform no rf",le_x0,"=>",transform_norf(le_x0))
         print("transform no rf",he_x0,"=>",transform_norf(he_x0))
 
-        new_en=transform(en)
+        new_en=transform(en,tuned_par_fitted)
 
         return new_en
 
