@@ -2950,11 +2950,12 @@ class FinalizeLUT2P4(FinalizeLUT2):
     input_finelinecorr=FitLocalLinesRevCorrected
 
     p4origin="centroid"
+    p4le="v3"
     
     def get_version(self):
         v=FinalizeLUT2.get_version(self)
 
-        return v+"."+self.p4origin
+        return v+"."+self.p4origin+".le"+self.p4le
 
     def fine_correction(self,en):
         lines=pd.read_csv(getattr(self.input_finelinecorr,'local_lines_fullrt_fn').open(), delim_whitespace=True)
@@ -2969,11 +2970,26 @@ class FinalizeLUT2P4(FinalizeLUT2):
 
         print("applying final fine post correction:", 1./(he_x0-le_x0)*(he_model-le_model), le_model-le_x0)
 
-        def transform(_en):
+        vle=30
+
+        def rf(_en):
+            return _en-self.corr_par*10./(1.+(_en/59)**2)
+        
+        def transform_norf(_en):
             return le_model+(_en-le_x0)/(he_x0-le_x0)*(he_model-le_model)
 
+        def transform(_en):
+            return le_model+(rf(_en)-rf(le_x0))/(rf(he_x0)-rf(le_x0))*(he_model-le_model)
+
+        #def transform(_en):
+        #    return f(transform_fixlines(_en))
+
+        print("transform",vle,"=>",transform(vle))
         print("transform",le_x0,"=>",transform(le_x0))
         print("transform",he_x0,"=>",transform(he_x0))
+        print("transform no rf",vle,"=>",transform_norf(vle))
+        print("transform no rf",le_x0,"=>",transform_norf(le_x0))
+        print("transform no rf",he_x0,"=>",transform_norf(he_x0))
 
         new_en=transform(en)
 
