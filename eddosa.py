@@ -2091,6 +2091,9 @@ class ibis_isgr_evts_tag_scw_P4(ibis_isgr_evts_tag_scw):
 class VerifyLines(ddosa.DataAnalysis):
     pass
 
+class VerifyLinesP4(ddosa.DataAnalysis):
+    pass
+
 class ISGRIEventsScW(ddosa.ISGRIEvents):
     input_verifylines=VerifyLines
     input_evttag=ibis_isgr_energy_scw
@@ -2480,6 +2483,8 @@ class CorrectBipar(ddosa.DataAnalysis):
                                                                 corr[:,50:116].sum(axis=1),
                                                                 corr[:,16:80].sum(axis=1)
                                                                 )))
+class CorrectBiparP4(CorrectBipar):
+    input_lut2=FinalizeLUT2P4
 
 class CorrectBipar2048(CorrectBipar):
     bins="2048"
@@ -2761,6 +2766,9 @@ class VerifyLines(ddosa.DataAnalysis):
       #  if abs(x0-59.3)>dx*self.factor:
       #      raise BadLineFit()
       #  print "decent line fit",x0,dx
+
+class VerifyLinesP4(ddosa.DataAnalysis):
+    input_correctedlines=FitLocalLinesRevCorrectedP4
 
 class FinalizeLUT2(ddosa.DataAnalysis):
     input_lut2=GenerateLUT2
@@ -3990,6 +3998,9 @@ class FitLocalLinesRevP2(FitLocalLinesScW):
 
 class FitLocalLinesRevCorrected(FitLocalLinesScW):
     input_spectrum=CorrectBipar
+
+class FitLocalLinesRevCorrectedP4(FitLocalLinesScW):
+    input_spectrum=CorrectBiparP4
     #input_spectrum=Spectrum1DP2
     #input_spectrum=EnergySpectrum1DRevP2
 
