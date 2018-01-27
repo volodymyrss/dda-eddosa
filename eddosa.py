@@ -2739,6 +2739,9 @@ class CubeBins:
 class FitLocalLinesRevCorrected(da.DataAnalysis):
     pass
 
+class FitLocalLinesRevCorrectedP4(da.DataAnalysis):
+    pass
+
 class BadLineFit(da.AnalysisException):
     pass
 
@@ -2767,7 +2770,7 @@ class VerifyLines(ddosa.DataAnalysis):
       #      raise BadLineFit()
       #  print "decent line fit",x0,dx
 
-class VerifyLinesP4(ddosa.DataAnalysis):
+class VerifyLinesP4(VerifyLines):
     input_correctedlines=FitLocalLinesRevCorrectedP4
 
 class FinalizeLUT2(ddosa.DataAnalysis):
@@ -2946,18 +2949,33 @@ class FinalizeLUT2(ddosa.DataAnalysis):
 class FinalizeLUT2P4(FinalizeLUT2):
     input_finelinecorr=FitLocalLinesRevCorrected
 
+    p4origin="centroid"
+    
+    def get_version(self):
+        v=FinalizeLUT2.get_version(self)
+
+        return v+"."+self.p4origin
+
     def fine_correction(self,en):
         lines=pd.read_csv(getattr(self.input_finelinecorr,'local_lines_fullrt_fn').open(), delim_whitespace=True)
         print(lines)
 
-        le_x0 = lines.bestfit_x0.iloc[0]
-        he_x0 = lines.bestfit_x0.iloc[1]
+        le_x0 = lines.centroid.iloc[0]
+        he_x0 = lines.centroid.iloc[1]
+        #le_x0 = lines.bestfit_x0.iloc[0]
+        #he_x0 = lines.bestfit_x0.iloc[1]
         le_model=59.
         he_model=511.
 
         print("applying final fine post correction:", 1./(he_x0-le_x0)*(he_model-le_model), le_model-le_x0)
 
-        new_en=le_model+(en-le_x0)/(he_x0-le_x0)*(he_model-le_model)
+        def transform(_en):
+            return le_model+(_en-le_x0)/(he_x0-le_x0)*(he_model-le_model)
+
+        print("transform",le_x0,"=>",transform(le_x0))
+        print("transform",he_x0,"=>",transform(he_x0))
+
+        new_en=transform(en)
 
         return new_en
 
