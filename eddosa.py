@@ -2080,7 +2080,6 @@ class ibis_isgr_evts_tag_scw(ddosa.ibis_isgr_evts_tag):
     cached=False
     input_events_corrected=ibis_isgr_energy_scw
 
-
 class ibis_isgr_energy_scw_P4(ibis_isgr_energy_scw):
     input_lut2 = FinalizeLUT2P4
 
@@ -2096,7 +2095,7 @@ class VerifyLinesP4(ddosa.DataAnalysis):
 
 class ISGRIEventsScW(ddosa.ISGRIEvents):
     input_verifylines=VerifyLines
-    input_evttag=ibis_isgr_energy_scw_P4
+    input_evttag=ibis_isgr_evts_tag_scw_P4
     #input_evttag=ibis_isgr_evts_tag_scw
 
     cached=True
