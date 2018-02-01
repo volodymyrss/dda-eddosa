@@ -1,13 +1,11 @@
 import ddosa
 from ddosa import *
+import pandas as pd
 
 #import ltdata
 
-try:
-    import fit_ng
-    import heaspa
-except:
-    pass
+import fit_ng
+import heaspa
 
 import pprint
 
@@ -18,7 +16,7 @@ from scipy import ndimage,interpolate
 
 import dataanalysis as da
         
-import pyfits
+import astropy.io.fits as pyfits
 from numpy import *
         
 from scipy.ndimage.filters import gaussian_filter
@@ -27,7 +25,6 @@ from scipy.ndimage.filters import gaussian_filter1d as g1d
 import plot
 import gzip,glob
         
-import pyfits
 from numpy import *
 import numpy as np # transition to this...
 from scipy import stats
@@ -46,6 +43,7 @@ ddosa.dataanalysis.printhook.LogStream("alllog.txt",lambda x:True)
 plot.showg=False
 
 cache_local=dataanalysis.caches.cache_core.Cache()
+#cache_local=dataanalysis.Cache
 
 from bcolors import render
 
@@ -605,7 +603,7 @@ class PrintBiparModel(ddosa.DataAnalysis):
         print self.input_biparmodel.get_version()
 
 class LEComplexBias(ddosa.DataAnalysis):
-    bias=0
+    bias=1
     
     def is_noanalysis(self):
         if self.bias==0:
@@ -626,7 +624,7 @@ class Fit3DModel(ddosa.DataAnalysis):
     input_biparmodel=LocateBiparModel
     input_detector_cond=DetectorConditions
 
-    version="v14.2"
+    version="v14.3"
     #version="v14.1"
 
     estimate_energy_power=0
@@ -744,14 +742,22 @@ class Fit3DModel(ddosa.DataAnalysis):
             
         
         # search for le peak
-        le_min_pha=70
-        le_max_pha=140
+        le_min_pha_early_guess=70
+        le_max_pha_early_guess=140
+
+        range_reduction_factor=self.input_p.max1/(60.*2.)
+
+        le_min_pha=le_min_pha_early_guess*range_reduction_factor
+        le_max_pha=le_max_pha_early_guess*range_reduction_factor
+
+        print("will search for LE line in PHA range",le_min_pha,le_max_pha,"LE gain loss factor",range_reduction_factor)
+
         le_min_rt=20
         le_max_rt=105
 
         det_le=copy(data)
-        det_le[0:le_min_pha]=0
-        det_le[le_max_pha:]=0
+        det_le[0:int(le_min_pha)]=0
+        det_le[int(le_max_pha):]=0
         
         le_line_profile=[]
         for rt_i in arange(rt_coord.shape[1]):
@@ -2021,6 +2027,9 @@ class LUT2FromFile(DataAnalysis):
 class FinalizeLUT2(da.DataAnalysis):
     pass
 
+class FinalizeLUT2P4(da.DataAnalysis):
+    pass
+
 
 class ibis_isgr_energy_scw(DataAnalysis):
     cached=False
@@ -2073,19 +2082,26 @@ class ibis_isgr_energy_scw(DataAnalysis):
 
         self.output_events=DataFile("isgri_events_corrected_scw2.fits")
 
-
-# new spectra etc
-
 class ibis_isgr_evts_tag_scw(ddosa.ibis_isgr_evts_tag):
     cached=False
     input_events_corrected=ibis_isgr_energy_scw
 
+class ibis_isgr_energy_scw_P4(ibis_isgr_energy_scw):
+    input_lut2 = FinalizeLUT2P4
+
+class ibis_isgr_evts_tag_scw_P4(ibis_isgr_evts_tag_scw):
+    cached=False
+    input_events_corrected=ibis_isgr_energy_scw_P4
+
 class VerifyLines(ddosa.DataAnalysis):
+    pass
+
+class VerifyLinesP4(ddosa.DataAnalysis):
     pass
 
 class ISGRIEventsScW(ddosa.ISGRIEvents):
     input_verifylines=VerifyLines
-    input_evttag=ibis_isgr_energy_scw
+    input_evttag=ibis_isgr_evts_tag_scw_P4
     #input_evttag=ibis_isgr_evts_tag_scw
 
     cached=True
@@ -2099,6 +2115,8 @@ class ISGRIEventsScW(ddosa.ISGRIEvents):
     def main(self):
         self.events=self.input_evttag.output_events
 
+class ISGRIEventsScWP4(da.DataAnalysis):
+    pass
 
 class BinBackgroundSpectrumP2(BinBackgroundSpectrum):
     input_events=ISGRIEventsScW
@@ -2469,6 +2487,8 @@ class CorrectBipar(ddosa.DataAnalysis):
                                                                 corr[:,50:116].sum(axis=1),
                                                                 corr[:,16:80].sum(axis=1)
                                                                 )))
+class CorrectBiparP4(CorrectBipar):
+    input_lut2=FinalizeLUT2P4
 
 class CorrectBipar2048(CorrectBipar):
     bins="2048"
@@ -2710,12 +2730,20 @@ class GenerateLUT2(ddosa.DataAnalysis):
 
 class CubeBins:
     def __init__(self):
-        self.emin,self.emax=(lambda x:(x['E_MIN'],x['E_MAX']))(pyfits.open(os.environ['INTEGRAL_DATA']+"/resources/rmf_256bins.fits")['EBOUNDS'].data)
+        if 'ISGRI_RMF_256' in os.environ:
+            isgri_rmf=pyfits.open(os.environ["ISGRI_RMF_256"])
+        else:
+            isgri_rmf=pyfits.open(os.environ["INTEGRAL_DATA"]+"/resources/rmf_256bins.fits")
+
+        self.emin,self.emax=(lambda x:(x['E_MIN'],x['E_MAX']))(isgri_rmf['EBOUNDS'].data)
         self.energies=(self.emin+self.emax)/2.
         self.denergies=(self.emax-self.emin)/2.
         self.pha=self.energies*2
 
 class FitLocalLinesRevCorrected(da.DataAnalysis):
+    pass
+
+class FitLocalLinesRevCorrectedP4(da.DataAnalysis):
     pass
 
 class BadLineFit(da.AnalysisException):
@@ -2725,6 +2753,7 @@ class VerifyLines(ddosa.DataAnalysis):
     input_correctedlines=FitLocalLinesRevCorrected
 
     factor=3
+    syst_percent=5
 
     copy_cached_input=False
 
@@ -2733,7 +2762,7 @@ class VerifyLines(ddosa.DataAnalysis):
         print "HE line",he_line
         x0,x1,x2=he_line['centroid'],he_line['x0_lower_limit'],he_line['x0_upper_limit']
         dx=(x2-x1)/2.
-        if abs(x0-511.)>dx*self.factor:
+        if abs(x0-511.)>dx*self.factor+self.syst_percent*511./100.:
             raise BadLineFit()
         print "decent line fit",x0,dx
         
@@ -2745,9 +2774,14 @@ class VerifyLines(ddosa.DataAnalysis):
       #      raise BadLineFit()
       #  print "decent line fit",x0,dx
 
+class VerifyLinesP4(VerifyLines):
+    input_correctedlines=FitLocalLinesRevCorrectedP4
+
 class FinalizeLUT2(ddosa.DataAnalysis):
     input_lut2=GenerateLUT2
     input_rev=Revolution
+
+    #input_finelinecorr=FitLocalLinesRevCorrected
 
     copy_cached_input=False
 
@@ -2757,9 +2791,14 @@ class FinalizeLUT2(ddosa.DataAnalysis):
         v=self.get_signature()+".x"
         if self.corr is None:
             return v+"vbase5.2"
-        return v+"corr"+self.corr
+
+        if self.corr!="pb3":
+            return v+"corr"+self.corr
+
+        return v+"_corr"+self.corr+".%.5lg"%self.corr_par
 
     corr=None
+    corr_par=1.
 
     def interpolate(self,ph,ph1,l1,dl1,ph2,l2,dl2):
         return l1+(l2-l1)/(ph2-ph1)*(ph-ph1)
@@ -2868,6 +2907,22 @@ class FinalizeLUT2(ddosa.DataAnalysis):
             l2f[m]=(l2f+((l2f-59.)/59.)**2*6)[m]
             lut2=l2f.reshape(lut2.shape)
 
+
+        if self.corr=="pb3":
+            def rf(en):
+                return en-self.corr_par*10./(1.+(en/59)**2)
+
+            def f(en):
+                return rf(en)-rf(59)+59
+
+            l2f=lut2.flatten()
+            l2f=f(l2f)
+            lut2=l2f.reshape(lut2.shape)
+
+        l2f = lut2.flatten()
+        l2f = self.fine_correction(l2f)
+        lut2 = l2f.reshape(lut2.shape)
+
         nf="lut2_1d_final.fits"
 
         header=pyfits.Header()
@@ -2879,6 +2934,9 @@ class FinalizeLUT2(ddosa.DataAnalysis):
         pyfits.PrimaryHDU(lut2,header=header).writeto(nf,clobber=True)
 
         self.lut2_1d=da.DataFile(nf)
+
+    def fine_correction(self,en):
+        return en
 
     def lut2_1d_to_3d(self):
         # copied from GLT amd file!
@@ -2892,6 +2950,60 @@ class FinalizeLUT2(ddosa.DataAnalysis):
         fd.writeto("lut2_3d.fits",clobber=True)
         return "lut2_3d.fits"
 
+class FinalizeLUT2P4(FinalizeLUT2):
+    input_finelinecorr=FitLocalLinesRevCorrected
+
+    p4origin="centroid"
+    p4le="v4"
+    
+    def get_version(self):
+        v=FinalizeLUT2.get_version(self)
+
+        return v+"."+self.p4origin+".le"+self.p4le
+
+    def fine_correction(self,en):
+        lines=pd.read_csv(getattr(self.input_finelinecorr,'local_lines_fullrt_fn').open(), delim_whitespace=True)
+        print(lines)
+
+        le_x0 = lines.centroid.iloc[0]
+        he_x0 = lines.centroid.iloc[1]
+        #le_x0 = lines.bestfit_x0.iloc[0]
+        #he_x0 = lines.bestfit_x0.iloc[1]
+        le_model=59.
+        he_model=511.
+
+        print("applying final fine post correction:", 1./(he_x0-le_x0)*(he_model-le_model), le_model-le_x0)
+
+        vle=30
+        new_vle=25
+
+
+        def rf(_en,tuned_par):
+            return _en-self.corr_par*tuned_par*10./(1.+(_en/59)**2)
+        
+        def transform_norf(_en):
+            return le_model+(_en-le_x0)/(he_x0-le_x0)*(he_model-le_model)
+
+        def transform(_en,tuned_par):
+            return le_model+(rf(_en,tuned_par)-rf(le_x0,tuned_par))/(rf(he_x0,tuned_par)-rf(le_x0,tuned_par))*(he_model-le_model)
+
+        tuned_par_fitted=min([[abs(rf(vle,tuned_par)-new_vle),tuned_par] for tuned_par in np.logspace(-1,1,100)])[1]
+
+        print("tuned par",tuned_par_fitted)
+
+        #def transform(_en):
+        #    return f(transform_fixlines(_en))
+
+        print("transform",vle,"=>",transform(vle,tuned_par_fitted))
+        print("transform",le_x0,"=>",transform(le_x0,tuned_par_fitted))
+        print("transform",he_x0,"=>",transform(he_x0,tuned_par_fitted))
+        print("transform no rf",vle,"=>",transform_norf(vle))
+        print("transform no rf",le_x0,"=>",transform_norf(le_x0))
+        print("transform no rf",he_x0,"=>",transform_norf(he_x0))
+
+        new_en=transform(en,tuned_par_fitted)
+
+        return new_en
 
 class ISGRI_RISE_MOD(ddosa.DataAnalysis):
     input_lut2=FinalizeLUT2
@@ -3930,6 +4042,9 @@ class FitLocalLinesRevP2(FitLocalLinesScW):
 
 class FitLocalLinesRevCorrected(FitLocalLinesScW):
     input_spectrum=CorrectBipar
+
+class FitLocalLinesRevCorrectedP4(FitLocalLinesScW):
+    input_spectrum=CorrectBiparP4
     #input_spectrum=Spectrum1DP2
     #input_spectrum=EnergySpectrum1DRevP2
 
@@ -4508,6 +4623,10 @@ class BinBackgroundSpectrumP3(BinBackgroundSpectrum):
     input_events=FineEnergyCorrection
     tag="P3"
 
+class BinBackgroundSpectrumP4(BinBackgroundSpectrum):
+    input_events=ISGRIEventsScWP4
+    tag="P3"
+
 class Spectrum1DP3(Spectrum1D):
     input_binned=BinBackgroundSpectrumP3
 
@@ -4526,6 +4645,9 @@ class ISGRIEventsFinal(da.DataAnalysis):
 
     def main(self):
         return self.events
+
+class ISGRIEventsScWP4(ISGRIEventsScW):
+    input_evttag = ibis_isgr_evts_tag_scw_P4
 
 class BinEventsVirtual(ddosa.BinEventsVirtual):
     input_events=ISGRIEventsFinal
