@@ -28,6 +28,7 @@ import gzip,glob
 from numpy import *
 import numpy as np # transition to this...
 from scipy import stats
+from scipy.interpolate import interp1d as i1d
 
 from scipy.interpolate import interp1d,UnivariateSpline
 import sys
@@ -2624,6 +2625,8 @@ class Fit3DModelRev(ddosa.DataAnalysis):
             use_mutating=False
         )
 
+
+
 class GenerateLUT2(ddosa.DataAnalysis):
     #input_p=FindPeaks
     input_detector_model=Fit3DModelRev
@@ -2727,6 +2730,43 @@ class GenerateLUT2(ddosa.DataAnalysis):
             self.response_3d=DataFile("response_3d.fits")
 
         #os.system("rm -fv response_3d.fits")
+
+class ReferenceModelSet(ddosa.DataAnalysis):
+    allow_alias=True
+    run_for_hashe=True
+
+    def main(self):
+        reference_revs=["1626","1927"]
+
+        self.models=[]
+        for rev in reference_revs:
+            self.models.append([rev,Fit3DModelRev(assume=[ddosa.Revolution(input_revid=rev)])])
+
+class InterpolatedDetectorModel(ddosa.DataAnalysis):
+    input_rev=ddosa.Revolution
+
+    input_reference=ReferenceModelSet
+
+    def main(self):
+        ijd0=self.input_rev.get_ijd()
+        revid=float(self.input_rev.input_revid.str())
+
+        models=[]
+        for rrev,model in self.input_reference.models:
+            print(rrev,model)
+            print(model.detector)
+            models.append(dict([(k,getattr(model.detector,k)) for k in ['mu_e','mu_t','tau_e','tau_t','offset']]))
+
+        modelset=pd.DataFrame(models)
+
+        self.detector=self.input_biparmodel.bipar_model.detector()
+        self.detector.mu_e=modelset.mu_e
+
+        raise NotImplemented()
+
+
+class GenerateModelledLUT2(GenerateLUT2):
+    input_detector_model=InterpolatedDetectorModel
 
 class CubeBins:
     def __init__(self):
@@ -4303,7 +4343,6 @@ class Response(da.DataAnalysis):
 
         savetxt("arf.txt",arf_0)
 
-        from scipy.interpolate import interp1d as i1d
 
         for key,r2dattr in self.input_r2d.r1ds:
             f=pyfits.open(getattr(self.input_r2d,r2dattr).get_path())
