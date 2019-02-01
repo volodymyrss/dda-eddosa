@@ -116,7 +116,7 @@ class ibis_isgr_energy(DataAnalysis):
             self.input_scw.scwpath+"/ibis_hk.fits[IBIS-DPE.-CNV]" \
         ])
 
-        bin=os.environ['COMMON_INTEGRAL_SOFTDIR']+"/spectral/ibis_isgr_energy/ibis_isgr_energy_pha2/ibis_isgr_energy"
+        bin=os.environ['COMMON_INTEGRAL_SOFTDIR']+"/spectral/ibis_isgr_energy/ibis_isgr_energy_pha2_optdrift/ibis_isgr_energy"
         ht=heatool(bin)
         ht['inGRP']="og.fits"
         ht['outCorEvts']="isgri_events_corrected.fits(ISGR-EVTS-COR.tpl)"
