@@ -1,11 +1,10 @@
 import ddosa
-from ddosa import *
+#from ddosa import * # TODO: import what?
 import pandas as pd
 
 #import ltdata
 
 import fit_ng
-import heaspa
 
 import pprint
 
@@ -973,7 +972,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         pyfits.PrimaryHDU(data_uncorrected).writeto("data_uncorrected%s.fits"%tag,clobber=True)
         
         d1d=data_corrected.sum(axis=1)
-        heaspa.PHA(d1d,sqrt(d1d),1).write("data_corrected_1d%s.fits"%tag)
+        ogip.spec.PHAI(d1d,sqrt(d1d),1).write("data_corrected_1d%s.fits"%tag)
         
 
     def evaluate_biases_corrected(self,energies,data_corrected,tag):
@@ -1069,7 +1068,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         
         
         d1d=data_corrected.sum(axis=1)
-        heaspa.PHA(d1d,sqrt(d1d),1).write("data_corrected_1d%s.fits"%tag)
+        ogip.spec.PHAI(d1d,sqrt(d1d),1).write("data_corrected_1d%s.fits"%tag)
         
         rtedges=[10,40,50,70,100]
 
@@ -1105,7 +1104,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
             savetxt("estimation_%i_%i_%s.txt"%(rt1,rt2,tag),column_stack((energies[on_region],bkg[on_region],d1d[on_region])))
 
-           # heaspa.PHA(d1d,sqrt(d1d),1).write("data_corrected_1d_%i_%i.fits"%(rt1,rt2))
+           # ogip.spec.PHA(d1d,sqrt(d1d),1).write("data_corrected_1d_%i_%i.fits"%(rt1,rt2))
 
         he_line_biases_i=UnivariateSpline(*list(zip(*he_line_biases)),k=1)
 
@@ -1172,7 +1171,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
             savetxt("pha_estimation_%i_%i_%s.txt"%(rt1,rt2,tag),column_stack((pha_1d[on_region],bkg[on_region],d1d[on_region])))
 
-           # heaspa.PHA(d1d,sqrt(d1d),1).write("data_corrected_1d_%i_%i.fits"%(rt1,rt2))
+           # ogip.spec.PHA(d1d,sqrt(d1d),1).write("data_corrected_1d_%i_%i.fits"%(rt1,rt2))
             
         savetxt("pha_estimation_%s.txt"%tag,array(he_binned_line_profile))
 
@@ -1246,7 +1245,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         self.data_corrected_frommodel=da.DataFile(fn)
         
         d1d=data_uncorrected.sum(axis=1)
-        heaspa.PHA(d1d,sqrt(d1d),1).write("data_uncorrected_1d.fits")
+        ogip.spec.PHAI(d1d,sqrt(d1d),1).write("data_uncorrected_1d.fits")
         
     def residual_func(self,pars):
         print(render('{RED}trying factors{/}'), pars)
@@ -3634,18 +3633,18 @@ class Spectrum1DVirtual(da.DataAnalysis):
         
         e1=ebins[:-1]
         e2=ebins[1:]
-        rmf=heaspa.RMF(e1,e2,e1,e2,diag(ones_like(e1)))
+        rmf=ogip.spec.RMF(e1,e2,e1,e2,diag(ones_like(e1)))
         fn="response_unitary.fits"
         rmf.write(fn)
         self.rmf=da.DataFile(fn)
 
-        pha=heaspa.PHA(counts,sqrt(counts),exposure,response=fn)
+        pha=ogip.spec.PHA(counts,sqrt(counts),exposure,response=fn)
         fn="spectrum_lrt50.fits"
         pha.write(fn)
         self.spectrum=da.DataFile(fn)
         self.spectrum_lowrt=da.DataFile(fn)
         
-        pha=heaspa.PHA(h1_116,sqrt(h1_116),exposure,response=fn)
+        pha=ogip.spec.PHA(h1_116,sqrt(h1_116),exposure,response=fn)
         fn="spectrum_fullrt.fits"
         pha.write(fn)
         self.spectrum_fullrt=da.DataFile(fn)
@@ -3654,7 +3653,7 @@ class Spectrum1DVirtual(da.DataAnalysis):
         if h2 is not None:
             for rt1,rt2 in [(50,80),(80,116),(50,116)]:
                 h1=h2[:,rt1:rt2].sum(axis=1).astype(float64)
-                pha=heaspa.PHA(h1,sqrt(h1),exposure,response=fn)
+                pha=ogip.spec.PHA(h1,sqrt(h1),exposure,response=fn)
                 fn="spectrum_rt_%.5lg_%.5lg.fits"%(rt1,rt2)
                 pha.write(fn)
                 setattr(self,"spectrum_%.5lg_%.5lg"%(rt1,rt2),da.DataFile(fn))
@@ -4179,7 +4178,7 @@ class Spectrum1DCorrected(Spectrum1DVirtual):
         
         e1=ebins[:-1]
         e2=ebins[1:]
-        rmf=heaspa.RMF(e1,e2,e1,e2,diag(ones_like(e1)))
+        rmf=ogip.spec.RMF(e1,e2,e1,e2,diag(ones_like(e1)))
         rmf_fn="response_unitary.fits"
         rmf.write(rmf_fn)
         self.rmf=da.DataFile(rmf_fn)
@@ -4187,7 +4186,7 @@ class Spectrum1DCorrected(Spectrum1DVirtual):
         h2=self.get_h2()
         for rt1,rt2 in [(16,50),(16,116),(50,80),(80,116),(50,116)]:
             h1=h2[:,rt1:rt2].sum(axis=1).astype(float64)
-            pha=heaspa.PHA(h1,sqrt(h1),exposure,response=rmf_fn)
+            pha=ogip.spec.PHA(h1,sqrt(h1),exposure,response=rmf_fn)
             fn="spectrum_rt_%.5lg_%.5lg.fits"%(rt1,rt2)
             pha.write(fn)
             setattr(self,"spectrum_%.5lg_%.5lg"%(rt1,rt2),da.DataFile(fn))
@@ -4368,7 +4367,7 @@ class Response(da.DataAnalysis):
             savetxt("arf%s2.txt"%key,arf_0)
 
             if self.use_flat_arf:
-                heaspa.ARF(arf_e1,arf_e2,arf_l2_interpolated).write("arf_%s_lut2.fits"%key)
+                ogip.spec.ARF(arf_e1,arf_e2,arf_l2_interpolated).write("arf_%s_lut2.fits"%key)
             else:
                 arf_hdu.data['SPECRESP']=arf_0*arf_l2_interpolated
                 arf_hdu.writeto("arf_%s.fits"%key,clobber=True)
@@ -5055,7 +5054,7 @@ class BiSpectrumMerged(ddosa.DataAnalysis):
        # a,b=meshgrid(ebins[:-1],me1)
        # diagonal=exp(-(a-b)**2/2)
 
-       # heaspa.RMF(ebins[:-1],ebins[1:],me1,me2,diagonal).write("response_diag_log100.fits")
+       # ogip.spec.RMF(ebins[:-1],ebins[1:],me1,me2,diagonal).write("response_diag_log100.fits")
         
         #self.response_diag=da.DataFile("response_diag_log100.fits")
 
@@ -5064,8 +5063,8 @@ class BiSpectrumMerged(ddosa.DataAnalysis):
 
         self.exposure=exposure
 
-        heaspa.PHA(s1d*binw,sqrt(s1dt)*binw,exposure).write("energy_spectrum.fits")
-        heaspa.PHA(s1d*binw*onaxis_corr,sqrt(s1dt)*binw*onaxis_corr,exposure).write("energy_spectrum_noonaxis.fits")
+        ogip.spec.PHAI(s1d*binw,sqrt(s1dt)*binw,exposure).write("energy_spectrum.fits")
+        ogip.spec.PHAI(s1d*binw*onaxis_corr,sqrt(s1dt)*binw*onaxis_corr,exposure).write("energy_spectrum_noonaxis.fits")
         
         self.energy_spectrum=da.DataFile("energy_spectrum.fits")
 
@@ -5137,7 +5136,7 @@ class ReconstructBipar(da.DataAnalysis):
         s1d=energy_pi[:,16:116].sum(axis=1)
         s1dt=energy_pi[:,16:116].sum(axis=1) # not same
 
-        heaspa.PHA(s1d*binw,sqrt(s1dt)*binw,exposure/10).write("energy_spectrum_recon_%s.fits"%key)
+        ogip.spec.PHAI(s1d*binw,sqrt(s1dt)*binw,exposure/10).write("energy_spectrum_recon_%s.fits"%key)
 
 
 
