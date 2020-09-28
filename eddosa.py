@@ -1,5 +1,4 @@
 import ddosa
-#from ddosa import * # TODO: import what?
 from ddosa import dataanalysis, \
                    ScWData, \
                    DataAnalysis, \
@@ -11,16 +10,16 @@ from ddosa import dataanalysis, \
                    RevForScW, \
                    ScWData
 
-import astropy.io.fits
 
+import sys
+import pprint
+import gzip, glob
+import astropy.io.fits
 import pandas as pd
 
 #import ltdata
 
 import fit_ng
-
-import pprint
-
 import pilton
 
 from copy import deepcopy
@@ -29,20 +28,14 @@ from scipy import ndimage,interpolate
 import dataanalysis as da
         
 import astropy.io.fits as pyfits
+import numpy as np # transition to this...
 from numpy import sqrt, array
         
 from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage.filters import gaussian_filter1d as g1d
-
-import gzip, glob
-        
-from numpy import *
-import numpy as np # transition to this...
 from scipy import stats
 from scipy.interpolate import interp1d as i1d
-
 from scipy.interpolate import interp1d,UnivariateSpline
-import sys
 
         
 import gzip
