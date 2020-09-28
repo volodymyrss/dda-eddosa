@@ -1,5 +1,18 @@
 import ddosa
 #from ddosa import * # TODO: import what?
+from ddosa import dataanalysis, \
+                   ScWData, \
+                   DataAnalysis, \
+                   GetEcorrCalDB, \
+                   remove_withtemplate, \
+                   construct_gnrl_scwg_grp, \
+                   heatool, \
+                   DataFile, \
+                   RevForScW, \
+                   ScWData
+
+import astropy.io.fits
+
 import pandas as pd
 
 #import ltdata
@@ -16,13 +29,12 @@ from scipy import ndimage,interpolate
 import dataanalysis as da
         
 import astropy.io.fits as pyfits
-from numpy import *
+from numpy import sqrt, array
         
 from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage.filters import gaussian_filter1d as g1d
 
-import plot
-import gzip,glob
+import gzip, glob
         
 from numpy import *
 import numpy as np # transition to this...
@@ -40,6 +52,8 @@ from functools import reduce
 #ddosa.dataanalysis.LogStream(None,lambda x:any([y in x for y in ['heatool','top']]))
 ddosa.dataanalysis.printhook.LogStream(None,lambda x:True)
 ddosa.dataanalysis.printhook.LogStream("alllog.txt",lambda x:True)
+
+import plot
 
 plot.showg=False
 
