@@ -3657,14 +3657,14 @@ class Spectrum1DVirtual(da.DataAnalysis):
         
         e1=ebins[:-1]
         e2=ebins[1:]
-        rmf=ogip.spec.RMF(e1,e2,e1,e2,np.diag(np.ones_like(e1)))
+        rmf=ogip.spec.RMF(e1,e2,np.diag(np.ones_like(e1)),e1,e2)
         fn="response_unitary.fits"
-        rmf.write(fn)
+        rmf.to_fits(fn)
         self.rmf=da.DataFile(fn)
 
         pha=ogip.spec.PHAI(counts,sqrt(counts),np.exposure,response=fn)
         fn="spectrum_lrt50.fits"
-        pha.write(fn)
+        pha.to_fits(fn)
         self.spectrum=da.DataFile(fn)
         self.spectrum_lowrt=da.DataFile(fn)
         
@@ -4202,9 +4202,9 @@ class Spectrum1DCorrected(Spectrum1DVirtual):
         
         e1=ebins[:-1]
         e2=ebins[1:]
-        rmf=ogip.spec.RMF(e1,e2,e1,e2,np.diag(np.ones_like(e1)))
+        rmf=ogip.spec.RMF.from_arrays(e1,e2,e1,e2,np.diag(np.ones_like(e1)))
         rmf_fn="response_unitary.fits"
-        rmf.write(rmf_fn)
+        rmf.to_fits(rmf_fn)
         self.rmf=da.DataFile(rmf_fn)
 
         h2=self.get_h2()
