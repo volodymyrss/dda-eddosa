@@ -1,5 +1,7 @@
 import ddosa
 import traceback
+import ogip
+import re
 from ddosa import dataanalysis, \
                    ScWData, \
                    DataAnalysis, \
@@ -1415,7 +1417,6 @@ class Fit3DModel(ddosa.DataAnalysis):
     def optimize(self):
         open("fit.txt","w").close()
 
-        import nlopt
         self.nattempts=0 
 
         free_pars=list(zip(*self.list_free_pars()))[1]
@@ -1672,7 +1673,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
                 plot.p.figure()
                 plot.p.subplot(211)
-                plot.p.contourf(pha_coord.transpose(),rt_coord.transpose(),m.np.transpose(),levels=np.linspace(m.min(),m.max(),100))
+                plot.p.contourf(pha_coord.transpose(),rt_coord.transpose(),m.transpose(),levels=np.linspace(m.min(),m.max(),100))
                 plot.p.xlim([60,1200])
                 plot.p.ylim([10,150])
                 plot.p.colorbar()
@@ -1734,12 +1735,12 @@ class Fit3DModel(ddosa.DataAnalysis):
 
             plot.p.figure()
             plot.p.subplot(211)
-            plot.p.contourf(pha_coord.transpose(),rt_coord.transpose(),m.np.transpose(),levels=np.linspace(m.min(),m.max(),100))
+            plot.p.contourf(pha_coord.transpose(),rt_coord.transpose(),m.transpose(),levels=np.linspace(m.min(),m.max(),100))
             plot.p.xlim([80,1200])
             plot.p.ylim([10,150])
             plot.p.colorbar()
             plot.p.subplot(212)
-            m_1d=m.np.transpose().sum(axis=0)
+            m_1d=m.transpose().sum(axis=0)
             pha_1d=pha_coord.transpose()[0]
             data_1d=data.mean(axis=1).np.transpose()
             model_1d=model.mean(axis=1).np.transpose()
@@ -1834,7 +1835,7 @@ physical
 
         print("mask open",np.where(mask)[0].shape[0])
 
-        #print pha_coord.shape,rt_coord.shape,m.np.transpose().shape
+        #print pha_coord.shape,rt_coord.shape,m.transpose().shape
         m=copy(data)
         m[~np.logical_or(mask,mask_bkg)]=0
 
@@ -1871,7 +1872,7 @@ physical
 
         print("mask open",np.where(mask)[0].shape[0])
 
-        #print pha_coord.shape,rt_coord.shape,m.np.transpose().shape
+        #print pha_coord.shape,rt_coord.shape,m.transpose().shape
         m=copy(data)
         m[~np.logical_or(mask,mask_bkg)]=0
     
@@ -3379,7 +3380,7 @@ class FitLineBipars(ddosa.DataAnalysis):
         def residual_func(region_model,p):
 
             r=((data[m]-region_model(ec[m],p))/err[m])**2
-            rs=nansum(r)/nansum(r/r)
+            rs=np.nansum(r)/np.nansum(r/r)
             if self.global_i%100==0:
                 print(p,rs)
              #   np.savetxt("fit_model_"+str(self.global_i)+"_"+str(key)+".txt",np.column_stack((ec[m],de[m],region_model(ec[m],p),data[m],r)))
@@ -3461,7 +3462,7 @@ class FitLineBipars(ddosa.DataAnalysis):
         
         def residual_func(region_model,p):
             r=((data[m]-region_model(ec[m],p))/err[m])**2
-            rs=nansum(r)/nansum(r/r)
+            rs=np.nansum(r)/np.nansum(r/r)
             if self.global_i%100==0:
                 print(p,rs)
              #   np.savetxt("fit_model_"+str(self.global_i)+"_"+str(key)+".txt",np.column_stack((ec[m],de[m],region_model(ec[m],p),data[m],r)))
@@ -3661,13 +3662,13 @@ class Spectrum1DVirtual(da.DataAnalysis):
         rmf.write(fn)
         self.rmf=da.DataFile(fn)
 
-        pha=ogip.spec.PHA(counts,sqrt(counts),np.exposure,response=fn)
+        pha=ogip.spec.PHAI(counts,sqrt(counts),np.exposure,response=fn)
         fn="spectrum_lrt50.fits"
         pha.write(fn)
         self.spectrum=da.DataFile(fn)
         self.spectrum_lowrt=da.DataFile(fn)
         
-        pha=ogip.spec.PHA(h1_116,sqrt(h1_116),np.exposure,response=fn)
+        pha=ogip.spec.PHAI(h1_116,sqrt(h1_116),np.exposure,response=fn)
         fn="spectrum_fullrt.fits"
         pha.write(fn)
         self.spectrum_fullrt=da.DataFile(fn)
@@ -3675,8 +3676,8 @@ class Spectrum1DVirtual(da.DataAnalysis):
         h2=self.get_h2()
         if h2 is not None:
             for rt1,rt2 in [(50,80),(80,116),(50,116)]:
-                h1=h2[:,rt1:rt2].sum(axis=1).astype(float64)
-                pha=ogip.spec.PHA(h1,sqrt(h1),np.exposure,response=fn)
+                h1=h2[:,rt1:rt2].sum(axis=1).astype(np.float64)
+                pha=ogip.spec.PHAI(h1,sqrt(h1),np.exposure,response=fn)
                 fn="spectrum_rt_%.5lg_%.5lg.fits"%(rt1,rt2)
                 pha.write(fn)
                 setattr(self,"spectrum_%.5lg_%.5lg"%(rt1,rt2),da.DataFile(fn))
@@ -4208,8 +4209,8 @@ class Spectrum1DCorrected(Spectrum1DVirtual):
 
         h2=self.get_h2()
         for rt1,rt2 in [(16,50),(16,116),(50,80),(80,116),(50,116)]:
-            h1=h2[:,rt1:rt2].sum(axis=1).astype(float64)
-            pha=ogip.spec.PHA(h1,sqrt(h1),np.exposure,response=rmf_fn)
+            h1=h2[:,rt1:rt2].sum(axis=1).astype(np.float64)
+            pha=ogip.spec.PHAI(h1,sqrt(h1),np.exposure,response=rmf_fn)
             fn="spectrum_rt_%.5lg_%.5lg.fits"%(rt1,rt2)
             pha.write(fn)
             setattr(self,"spectrum_%.5lg_%.5lg"%(rt1,rt2),da.DataFile(fn))
@@ -4749,7 +4750,7 @@ class BinEventsVirtual(ddosa.BinEventsVirtual):
         lut2=pyfits.open(self.input_lut2.lut2_1d.get_path())[0].data
         
         ref_ch=[30,40,50]
-        ref_e=nanmean(lut2[ref_ch,16:20],1)-self.biaslt
+        ref_e=np.nanmean(lut2[ref_ch,16:20],1)-self.biaslt
 
         print("ref_ch, ref_e",ref_ch,ref_e)
 
@@ -4782,7 +4783,7 @@ class BinEventsVirtual(ddosa.BinEventsVirtual):
             print("lt bins:",ltbins)
             pyfits.PrimaryHDU(ltmap).writeto("ltmap.fits",overwrite=True)
 
-            s=argsort(lth[0])[::-1]
+            s=np.argsort(lth[0])[::-1]
             print(list(zip(ltbins[s[:10]],lth[0][s[:10]])))
             
             if self.ltfrac is not None:
