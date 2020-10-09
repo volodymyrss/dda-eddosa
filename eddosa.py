@@ -51,7 +51,7 @@ from functools import reduce
 
 #ddosa.dataanalysis.LogStream(None,lambda x:any([y in x for y in ['heatool','top']]))
 ddosa.dataanalysis.printhook.LogStream(None,lambda x:True)
-ddosa.dataanalysis.printhook.LogStream("allnp.log.txt",lambda x:True)
+ddosa.dataanalysis.printhook.LogStream("alllog.txt",lambda x:True)
 
 import plot
 
@@ -2648,8 +2648,8 @@ class GenerateLUT2(ddosa.DataAnalysis):
     input_detector_model=Fit3DModelRev
     input_biparmodel=LocateBiparModel
 
-    #version="v23_hr_nonp.log_lc_3d"
-    version="v23_hr_nonp.log_lc_3d_medmode_mm2"##
+    #version="v23_hr_nolog_lc_3d"
+    version="v23_hr_nolog_lc_3d_medmode_mm2"##
 
    # cache=cache_local
     cached=True
@@ -4675,8 +4675,8 @@ class FineEnergyCorrection(ddosa.DataAnalysis):
         #e.insert_column(name='ISGRI_ENERGY_P2',data=e.data['ISGRI_ENERGY'])
         e.data['ISGRI_ENERGY']=newenergy
 
-        #e_np.log=np.logspace(0,3,1000)
-        #np.savetxt("correction_p2_p3.txt",np.column_stack((e_np.log,correct_energy(e_np.log))))
+        #e_log=np.logspace(0,3,1000)
+        #np.savetxt("correction_p2_p3.txt",np.column_stack((e_log,correct_energy(e_log))))
 
         f.writeto("isgri_energy_scw_p3.fits",overwrite=True)
         self.events=da.DataFile("isgri_energy_scw_p3.fits")
@@ -5078,9 +5078,9 @@ class BiSpectrumMerged(ddosa.DataAnalysis):
        # a,b=np.meshgrid(ebins[:-1],me1)
        # np.diagonal=np.exp(-(a-b)**2/2)
 
-       # ogip.spec.RMF(ebins[:-1],ebins[1:],me1,me2,np.diagonal).write("response_np.diag_np.log100.fits")
+       # ogip.spec.RMF(ebins[:-1],ebins[1:],me1,me2,np.diagonal).write("response_np.diag_log100.fits")
         
-        #self.response_np.diag=da.DataFile("response_np.diag_np.log100.fits")
+        #self.response_np.diag=da.DataFile("response_np.diag_log100.fits")
 
         s1d=sb_energy_pi[:,16:116].sum(axis=1)
         s1dt=s_energy_pi[:,16:116].sum(axis=1)
