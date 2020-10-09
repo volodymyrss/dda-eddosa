@@ -168,7 +168,7 @@ class RawCalDataRev(da.DataAnalysis):
         files=glob.glob(pattern)
     
         inhdus=[pyfits.open(fn)[2] for fn in files]
-        nrows_total=sum([h.data.shape[0] for h in inhdus])
+        nrows_total=np.sum([h.data.shape[0] for h in inhdus])
 
         print("total rows:",nrows_total)
 
@@ -1282,7 +1282,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
             renergies=[self.input_fit.chan_to_energy(chan) for chan in channels]
             print(renergies)
-            value=-sum([((renergy-energy)/energy)**2 for renergy,energy in zip(renergies,energies)])**0.5
+            value=-np.sum([((renergy-energy)/energy)**2 for renergy,energy in zip(renergies,energies)])**0.5
 
             open('fit.txt', 'a').write('%i' % self.nattempts + ' ' + ' '.join([ '%.5lg' % p for p in [value] + list(pars) + list(renergies) ]) + ' ' + str([self.detector]) + '\n')
         elif self.optimize_shape:
@@ -1487,7 +1487,7 @@ class Fit3DModel(ddosa.DataAnalysis):
             pha=self.pha_coord[:,0]
             rt=self.rt_coord[0,:]
             apha=(line_model*self.pha_coord).sum(axis=0)/(line_model).sum(axis=0)
-            amp=sum(line_model,axis=0)
+            amp=np.sum(line_model,axis=0)
             
             #print pha,rt,apha,amp
 
@@ -1533,7 +1533,7 @@ class Fit3DModel(ddosa.DataAnalysis):
             m1=self.monoenergetic_model(e1,resolutionfactor=1.)
             m2=self.monoenergetic_model(e2,resolutionfactor=1.)
 
-            avch=lambda m:(sum((m*self.pha_coord)[:,rt1:rt2])/sum(m[:,rt1:rt2]))
+            avch=lambda m:(np.sum((m*self.pha_coord)[:,rt1:rt2])/np.sum(m[:,rt1:rt2]))
             g=(avch(m1)-avch(m2))/(e1-e2)
 
             print(rt1,rt2,"gain",e1,e2,g)
@@ -1638,7 +1638,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
                 model_max_rt=model[:,i][mask_window[:,i]].max()
 
-                model_avpha_rt=sum(model[:,i][mask_window[:,i]]*pha_se)/sum(model[:,i][mask_window[:,i]])
+                model_avpha_rt=np.sum(model[:,i][mask_window[:,i]]*pha_se)/np.sum(model[:,i][mask_window[:,i]])
 
                 model_phamax_rt=pha_se[model[:,i][mask_window[:,i]].argmax()]
 
@@ -2556,7 +2556,7 @@ class PredictLineBias(ddosa.DataAnalysis):
             
             for rt1,rt2 in ((16,50),(50,116),(16,116)):
                 espec=corr[:,rt1:rt2].sum(axis=1)
-                av=sum(espec*ec)/sum(espec)
+                av=np.sum(espec*ec)/np.sum(espec)
                 print(rt1,rt2,"np.average energy",av,"bias",av-line_e)
 
             np.savetxt("line_energy_%.5lg_1d.txt"%line_e,np.column_stack((
@@ -2948,7 +2948,7 @@ class FinalizeLUT2(ddosa.DataAnalysis):
 
             for _ph in range(2048):
                 badrt = np.isnan(lut2[_ph,:]) & (rt[_ph,:]<30)
-                if sum(~badrt)==0:
+                if np.sum(~badrt)==0:
                     lut2[_ph,:]=0
                     continue
 
@@ -3233,8 +3233,8 @@ class LineBipars(ddosa.DataAnalysis):
             setattr(self,fn.replace(".fits",""),da.DataFile(fn))
             pyfits.HDUList([pyfits.PrimaryHDU(line_model_ibismm),pyfits.ImageHDU(line_model),pyfits.ImageHDU(corrbipibismm),pyfits.ImageHDU(corrbip),pyfits.ImageHDU(line_model_jrec)]).writeto(fn,overwrite=True)
 
-dcenter=lambda x,y:sum(x*y)/sum(y)
-dwidth=lambda x,y:(sum(x*x*y)/sum(y)-dcenter(x,y)**2)**0.5
+dcenter=lambda x,y:np.sum(x*y)/np.sum(y)
+dwidth=lambda x,y:(np.sum(x*x*y)/np.sum(y)-dcenter(x,y)**2)**0.5
 
 class LineModel:
     def __init__(self):
@@ -3991,14 +3991,14 @@ class FitLocalLinesScW(ddosa.DataAnalysis):
 
             def line_model(x,p):
                 N,x0,w,wa=p
-                return sum([line_model_basic(x,[N*frac,x0+offs,w,wa]) for offs,frac in zip(offsets,fractions)],axis=0)
+                return np.sum([line_model_basic(x,[N*frac,x0+offs,w,wa]) for offs,frac in zip(offsets,fractions)],axis=0)
             
         def line_model_fx0(x,p):
             N,w,wa=p
             return line_model(x,[N,x0_fixed,w,wa])#np.exp(-(x-x0_fixed)**2/(w*(1+wa*x/x0_fixed))**2/2.)*N
 
         def residual_func(model,p):
-            return sum(((counts-bkg-model(ec,p))/err)**2)
+            return np.sum(((counts-bkg-model(ec,p))/err)**2)
         
         import nlopt
 
@@ -4069,8 +4069,8 @@ class FitLocalLinesScW(ddosa.DataAnalysis):
                 break
         x0_lower_limit=x0_fixed
 
-        centroid=sum(ec*line_model(ec,x))/sum(line_model(ec,x))
-        width=sqrt(sum(ec*ec*line_model(ec,x))/sum(line_model(ec,x))-centroid**2)
+        centroid=np.sum(ec*line_model(ec,x))/np.sum(line_model(ec,x))
+        width=sqrt(np.sum(ec*ec*line_model(ec,x))/np.sum(line_model(ec,x))-centroid**2)
         
         if self.plot:
             plot.p.clf()
@@ -4794,7 +4794,7 @@ class BinEventsVirtual(ddosa.BinEventsVirtual):
                 else:
                     mask=iltmap>=np.percentile(ltmap.flatten(),100+self.ltfrac*100)
 
-                print("ltfraction",iltmap[mask].min(),iltmap[mask].max(),iltmap[mask].max(),sum(mask))
+                print("ltfraction",iltmap[mask].min(),iltmap[mask].max(),iltmap[mask].max(),np.sum(mask))
 
                 f=pyfits.open(self.shadow_efficiency.get_path())
                 for i in range(len(f[2:])):
@@ -4914,8 +4914,8 @@ class BiSpectrum(ddosa.DataAnalysis):
         s_mask=pif_values>0.75
         b_mask=pif_values<0.25
 
-        area_on=sum(pif>0.75)
-        area_off=sum(pif<0.25)
+        area_on=np.sum(pif>0.75)
+        area_off=np.sum(pif<0.25)
         
         # efficeincy
         effi=[np.average(f.data) for f in pyfits.open(self.input_effi.shadow_efficiency.get_path())[2:]]
@@ -5267,7 +5267,7 @@ class ModelByScWEvoltuion(ddosa.DataAnalysis):
     def fit_evolution(self,t,en,en_e,key=""):
 
         t0=np.average(t)
-        en0=sum(en/en_e**2)/sum(1/en_e**2)
+        en0=np.sum(en/en_e**2)/np.sum(1/en_e**2)
     
         print("reference t0,en0",t0,en0)
 
