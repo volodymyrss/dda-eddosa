@@ -311,7 +311,7 @@ class BinBackgroundSpectrum(ddosa.DataAnalysis):
 
             if self.plot_2d:
                 plot.p.figure()
-                levels=linspace(0,np.log10(img_orig.max()),100)
+                levels=np.linspace(0,np.log10(img_orig.max()),100)
                 plot.p.contourf(np.log10(transpose(img_orig)),levels=levels)
              #   plot.p.contour(np.log10(transpose(img)),levels=levels)
                 plot.p.xlim([10,600])
@@ -361,8 +361,8 @@ class BinBackgroundSpectrum(ddosa.DataAnalysis):
             energy_spectrum=h1[0]
 
             def normalize_model(energy,spectrum,model_energy,width):
-                model_line=exp(-((energy-model_energy)/width)**2/2)
-                model_line[isnan(model_line)]=0
+                model_line=np.exp(-((energy-model_energy)/width)**2/2)
+                model_line[np.isnan(model_line)]=0
                 mask=model_line>(model_line.max()/10.)
                 model_line=model_line*spectrum[mask].max()
                 return model_line
@@ -506,7 +506,7 @@ class FindPeaks(ddosa.DataAnalysis):
         eh=ec[s]
 
         slope, intercept, r_value, p_value, std_err = stats.linregress(np.log(ec[sb]),np.log(h1[sb])) # validate
-        hhs=exp(np.log(hh)-intercept-np.log(eh)*slope)
+        hhs=np.exp(np.log(hh)-intercept-np.log(eh)*slope)
 
         hhs[~s1[s]]=0
         emax2=eh[hhs.argmax()]
@@ -675,10 +675,10 @@ class Fit3DModel(ddosa.DataAnalysis):
 
         plot.p.figure()
         print("max:",m.max())
-        lvls=linspace(0,np.log10(m.max()),100)
+        lvls=np.linspace(0,np.log10(m.max()),100)
         print(lvls)
         plot.p.contourf(np.log10(m+1e-10).transpose(),levels=lvls)
-        plot.p.contour(np.log10(line_model).transpose(),levels=linspace(0,np.log10(line_model.max()),10),color="green")
+        plot.p.contour(np.log10(line_model).transpose(),levels=np.linspace(0,np.log10(line_model.max()),10),color="green")
         plot.p.xlim([60,1200])
         plot.p.ylim([10,150])
         plot.plot("data_bip.png")
@@ -839,7 +839,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
 
                 
-       # for scaling in linspace(0.8,1.2,10):
+       # for scaling in np.linspace(0.8,1.2,10):
         #    residual_func([1,1,1,scaling])
    #         plot_model(det,1,compute_model(det,1,limrt=50))
 
@@ -907,7 +907,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         self.plot_model(tag="_lort")
 
 
-        self.explicit_output=['detector','fit_residuals','he_line_profile_estimate','le_line_profile_estimate','model_he_line_profile','model_le_line_profile','he_line_file','le_line_file']
+        self.np.explicit_output=['detector','fit_residuals','he_line_profile_estimate','le_line_profile_estimate','model_he_line_profile','model_le_line_profile','he_line_file','le_line_file']
             
     def correct_data_linear_estimation_update(self,tag):
         rt_prof_le=self.le_line_profile_estimate[:,0]
@@ -945,7 +945,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         self.energy_le=59.0+self.le_complex_bias
         self.energy_he=511.0
         
-        energies=linspace(0,1024,pha_1d.shape[0])
+        energies=np.linspace(0,1024,pha_1d.shape[0])
         energy_le=self.energy_le
         energy_he=self.energy_he
 
@@ -960,7 +960,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
             spectrum=interp1d(energy_scaled,data[:,irt],bounds_error=False)(energies)
             data_uncorrected[:,irt]=copy(data[:,irt])
-            spectrum[isnan(spectrum)]=0
+            spectrum[np.isnan(spectrum)]=0
             data_corrected[:,irt]=spectrum
 
         self.save_corrected(energies,data_corrected,data_uncorrected,tag)
@@ -1009,7 +1009,7 @@ class Fit3DModel(ddosa.DataAnalysis):
             on_bkg=np.logical_and(on_region,~on_line)
 
             slope, intercept, r_value, p_value, std_err = stats.linregress(np.log(energies[on_bkg]),np.log(d1d[on_bkg])) # validate
-            bkg=exp(intercept+np.log(energies)*slope)
+            bkg=np.exp(intercept+np.log(energies)*slope)
         
             # should check also if the  background is good
         
@@ -1046,7 +1046,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         data_corrected=np.zeros_like(data)
         data_uncorrected=np.zeros_like(data)
 
-        energies=linspace(0,1024,pha_1d.shape[0])
+        energies=np.linspace(0,1024,pha_1d.shape[0])
         energy_le=self.energy_le
         energy_he=self.energy_he
 
@@ -1062,7 +1062,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
             spectrum=interp1d(energy_scaled,data[:,irt],bounds_error=False)(energies)
             data_uncorrected[:,irt]=copy(data[:,irt])
-            spectrum[isnan(spectrum)]=0
+            spectrum[np.isnan(spectrum)]=0
             data_corrected[:,irt]=spectrum
 
        # self.data_corrected=data_corrected
@@ -1102,7 +1102,7 @@ class Fit3DModel(ddosa.DataAnalysis):
             on_bkg=np.logical_and(on_region,~on_line)
 
             slope, intercept, r_value, p_value, std_err = stats.linregress(np.log(energies[on_bkg]),np.log(d1d[on_bkg])) # validate
-            bkg=exp(intercept+np.log(energies)*slope)
+            bkg=np.exp(intercept+np.log(energies)*slope)
         
             # should check also if background is good
         
@@ -1171,7 +1171,7 @@ class Fit3DModel(ddosa.DataAnalysis):
             on_bkg=(on_region & ~on_line)
 
             slope, intercept, r_value, p_value, std_err = stats.linregress(np.log(pha_1d[on_bkg]),np.log(d1d[on_bkg])) # validate
-            bkg=exp(intercept+np.log(pha_1d)*slope)
+            bkg=np.exp(intercept+np.log(pha_1d)*slope)
         
             # should check also if background is good
         
@@ -1220,7 +1220,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         energy_he=self.energy_he
         energy_le=self.energy_le
 
-        energies=linspace(10,1000,pha_1d.shape[0])
+        energies=np.linspace(10,1000,pha_1d.shape[0])
 
         for rt,pha_le,pha_he in zip(rt_prof_le,model_prof_le,model_prof_he):
         #for irt,(rt,pha_le,pha_he) in enumerate(zip(rt_prof_le,model_prof_le,model_prof_he)):
@@ -1264,7 +1264,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         
     def residual_func(self,pars):
         print(render('{RED}trying factors{/}'), pars)
-        if any([isnan(p) for p in pars]):
+        if any([np.isnan(p) for p in pars]):
 
             self.plot_model()
             raise Exception("given nan pars! "+str(self.nattempts))
@@ -1493,7 +1493,7 @@ class Fit3DModel(ddosa.DataAnalysis):
             plot.plot_line_colored(apha,rt,amp,cmap='autumn')
             #plot_module.plot_line_colored(what[ie][:,0],np.arange(256),ie*np.ones_like(what[ie][:,1]),1+3*what[ie][:,1]/np.average(what[:,0,1]))
             #p.xlim([0,maxen*2.5])
-            plot.p.xlim([apha[~isnan(apha)].min(),apha[~isnan(apha)].max()])
+            plot.p.xlim([apha[~np.isnan(apha)].min(),apha[~np.isnan(apha)].max()])
             plot.p.ylim([0,256])
         plot.plot("edge_range_%.5lg_%.5lg.png"%(e1,e2))
 
@@ -1592,8 +1592,8 @@ class Fit3DModel(ddosa.DataAnalysis):
 
         if False:
             plot.p.figure()
-            plot.p.contourf(pha_coord.transpose(),rt_coord.transpose(),np.log10(mask_bkg).transpose(),levels=linspace(0,2,2),colors='r',alpha=0.3)
-            #plot.p.contourf(pha_coord.transpose(),rt_coord.transpose(),np.log10(mask).transpose(),levels=linspace(0,2,2),colors='b',alpha=0.3)
+            plot.p.contourf(pha_coord.transpose(),rt_coord.transpose(),np.log10(mask_bkg).transpose(),levels=np.linspace(0,2,2),colors='r',alpha=0.3)
+            #plot.p.contourf(pha_coord.transpose(),rt_coord.transpose(),np.log10(mask).transpose(),levels=np.linspace(0,2,2),colors='b',alpha=0.3)
             plot.p.xlim([60,1200])
             plot.p.ylim([10,150])
             plot.plot("mask.png")
@@ -1647,7 +1647,7 @@ class Fit3DModel(ddosa.DataAnalysis):
                 line_rt_profile.append([rt_coord[:,i][0],data_max,model_max_rt,bkg_model[:,i].mean(),data_phamax,model_phamax_rt,model_avpha_rt])
                 #print "model at rt",line_rt_profile[-1],model_normalized[:,i][mask_window[:,i]]
 
-            print("total in bkg model",bkg_model.sum(),d_bkg[~isnan(d_bkg)].sum())
+            print("total in bkg model",bkg_model.sum(),d_bkg[~np.isnan(d_bkg)].sum())
             
             # now normalize the rest
             d=copy(data)-copy(bkg_model)
@@ -1672,7 +1672,7 @@ class Fit3DModel(ddosa.DataAnalysis):
 
                 plot.p.figure()
                 plot.p.subplot(211)
-                plot.p.contourf(pha_coord.transpose(),rt_coord.transpose(),m.transpose(),levels=linspace(m.min(),m.max(),100))
+                plot.p.contourf(pha_coord.transpose(),rt_coord.transpose(),m.transpose(),levels=np.linspace(m.min(),m.max(),100))
                 plot.p.xlim([60,1200])
                 plot.p.ylim([10,150])
                 plot.p.colorbar()
@@ -1728,13 +1728,13 @@ class Fit3DModel(ddosa.DataAnalysis):
 
             m=copy(bkg_model)
             m[~np.logical_or(mask,mask_bkg)]=0
-            m[isnan(m)]=0
+            m[np.isnan(m)]=0
 
             print("total in bkg model",m.sum(),m.max())
 
             plot.p.figure()
             plot.p.subplot(211)
-            plot.p.contourf(pha_coord.transpose(),rt_coord.transpose(),m.transpose(),levels=linspace(m.min(),m.max(),100))
+            plot.p.contourf(pha_coord.transpose(),rt_coord.transpose(),m.transpose(),levels=np.linspace(m.min(),m.max(),100))
             plot.p.xlim([80,1200])
             plot.p.ylim([10,150])
             plot.p.colorbar()
@@ -1784,7 +1784,7 @@ class Fit3DModel(ddosa.DataAnalysis):
         bkg_model[mask_bkgline_1]+=bkg_model_1[mask_bkgline_1]
         bkg_model[mask_bkgline_2]+=bkg_model_2[mask_bkgline_2]
         
-        if isnan(prob):
+        if np.isnan(prob):
             prob=1e20
 
         
@@ -1824,7 +1824,7 @@ physical
         pars=self.get_free_pars()
         
         model,bkg_model,data,prob,mask,mask_bkg,norms=self.compute_model()
-        lvls=linspace(0,10,100)
+        lvls=np.linspace(0,10,100)
 
         mask_outline=np.zeros_like(mask)
         mask_outline[mask]=1
@@ -1863,7 +1863,7 @@ physical
         pars=self.get_free_pars()
 
         model,bkg_model,data,prob,mask,mask_bkg,norms=self.compute_model()
-        lvls=linspace(0,10,100)
+        lvls=np.linspace(0,10,100)
         print(lvls)
 
         mask_outline=np.zeros_like(mask)
@@ -1882,7 +1882,7 @@ physical
             data_av=np.average(m[np.logical_and(m>0,range_selection)])
             print("max:",data_max)
             print("np.average:",data_av)
-            lvls=linspace(np.log10(data_av/10),np.log10(data_max),30)
+            lvls=np.linspace(np.log10(data_av/10),np.log10(data_max),30)
             print(lvls)
 
             # 2d
@@ -1891,7 +1891,7 @@ physical
 
             p=axes[0,0]
             p.contourf(pha_coord.transpose(),rt_coord.transpose(),np.log10(m+1e-10).transpose(),levels=lvls)
-            p.contour(pha_coord.transpose(),rt_coord.transpose(),np.log10(model).transpose(),levels=linspace(0,np.log10(model.max()),10),cmap=plot.p.cm.PuBu)
+            p.contour(pha_coord.transpose(),rt_coord.transpose(),np.log10(model).transpose(),levels=np.linspace(0,np.log10(model.max()),10),cmap=plot.p.cm.PuBu)
             p.set_xlim(xrange)
             p.set_ylim([10,150])
             p.set_title(":%.5lg %s\ndet: %s\n%s"%(prob,norms,str(det),str(pars)),fontsize=10)
@@ -1975,7 +1975,7 @@ class PlotLines(ddosa.DataAnalysis):
             m=f[0].data[i,:,:]
 
             plot.p.figure()
-            plot.p.contourf(np.log10(m).transpose(),levels=linspace(0,np.log10(m.max()),100))
+            plot.p.contourf(np.log10(m).transpose(),levels=np.linspace(0,np.log10(m.max()),100))
             plot.p.title("%.5lg keV"%(e1[i]))
             plot.plot("response_single_%.5lg.png"%en)
 
@@ -2421,7 +2421,7 @@ class BinBackgroundMerged(ddosa.DataAnalysis):
 
         if self.plot:
             plot.p.clf()
-            plot.p.plot(linspace(0,1024,2048),merged_3.sum(axis=1))
+            plot.p.plot(np.linspace(0,1024,2048),merged_3.sum(axis=1))
             plot.plot("energy_spectrum.png")
 
     plot=False
@@ -2470,8 +2470,8 @@ class CorrectBipar(ddosa.DataAnalysis):
 
         nsteps_ph=80
         nsteps_rt=1
-        for dph in linspace(0,1,nsteps_ph):
-            for drt in linspace(0,1,nsteps_rt):
+        for dph in np.linspace(0,1,nsteps_ph):
+            for drt in np.linspace(0,1,nsteps_rt):
                 lut2_r=lut2+np.ones_like(lut2)*dph*dlut2_ph+np.ones_like(lut2)*drt*dlut2_rt
                 #lut2_r=lut2+np.random.uniform(size=lut2.shape)*dlut2_ph
                 corr += np.transpose(array([np.histogram(lut2_r[:,i],weights=data[:,i],bins=ebins)[0] for i in range(lut2.shape[1])]))/nsteps_ph/nsteps_rt
@@ -2534,15 +2534,15 @@ class PredictLineBias(ddosa.DataAnalysis):
             #r=r3d.get_energy(line_e,disable_ai=False)
             r=self.input_biparmodel.bipar_model.generate_bipar(self.input_detector_model.detector,line_e)[0]
 
-            pha_coord,rt_coord=meshgrid(np.arange(256),np.arange(2048))
+            pha_coord,rt_coord=np.meshgrid(np.arange(256),np.arange(2048))
 
             print(r.shape,lut2.shape,rt_coord.shape)
 
             m=(rt_coord>16.) & (rt_coord<116.)
-            r[isnan(r)]=0
-            lut2[isnan(lut2)]=0
+            r[np.isnan(r)]=0
+            lut2[np.isnan(lut2)]=0
             
-            ebins=linspace(0,1024,2049)
+            ebins=np.linspace(0,1024,2049)
             ec=(ebins[:-1]+ebins[1:])*0.5
 
             
@@ -3185,7 +3185,7 @@ class LineBipars(ddosa.DataAnalysis):
             pass
 
         lut2=pyfits.open(self.input_lut2.lut2_1d.get_path())[0].data
-        lut2[isnan(lut2)]=0
+        lut2[np.isnan(lut2)]=0
         
         ebins=self.input_corrdata.get_ebins()
         ec=(ebins[:-1]+ebins[1:])*0.5
@@ -3623,7 +3623,7 @@ class Spectrum1DVirtual(da.DataAnalysis):
             return pyfits.open(self.input_binned.h2_energy_pi.get_path())[0].data
 
 
-    def get_exposure(self):
+    def get_np.exposure(self):
         return self.input_scw.get_telapse()
     
     def get_ebins(self):
@@ -3650,7 +3650,7 @@ class Spectrum1DVirtual(da.DataAnalysis):
         h1_50,h1_116=self.get_h1()
         ebins=self.get_ebins()
 
-        exposure=self.get_exposure()
+        np.exposure=self.get_np.exposure()
 
         counts=h1_50
         
@@ -3661,13 +3661,13 @@ class Spectrum1DVirtual(da.DataAnalysis):
         rmf.write(fn)
         self.rmf=da.DataFile(fn)
 
-        pha=ogip.spec.PHA(counts,sqrt(counts),exposure,response=fn)
+        pha=ogip.spec.PHA(counts,sqrt(counts),np.exposure,response=fn)
         fn="spectrum_lrt50.fits"
         pha.write(fn)
         self.spectrum=da.DataFile(fn)
         self.spectrum_lowrt=da.DataFile(fn)
         
-        pha=ogip.spec.PHA(h1_116,sqrt(h1_116),exposure,response=fn)
+        pha=ogip.spec.PHA(h1_116,sqrt(h1_116),np.exposure,response=fn)
         fn="spectrum_fullrt.fits"
         pha.write(fn)
         self.spectrum_fullrt=da.DataFile(fn)
@@ -3676,7 +3676,7 @@ class Spectrum1DVirtual(da.DataAnalysis):
         if h2 is not None:
             for rt1,rt2 in [(50,80),(80,116),(50,116)]:
                 h1=h2[:,rt1:rt2].sum(axis=1).astype(float64)
-                pha=ogip.spec.PHA(h1,sqrt(h1),exposure,response=fn)
+                pha=ogip.spec.PHA(h1,sqrt(h1),np.exposure,response=fn)
                 fn="spectrum_rt_%.5lg_%.5lg.fits"%(rt1,rt2)
                 pha.write(fn)
                 setattr(self,"spectrum_%.5lg_%.5lg"%(rt1,rt2),da.DataFile(fn))
@@ -3711,7 +3711,7 @@ class Spectrum1DRev(Spectrum1DVirtual):
 
         return h1_lrt,h1_116
 
-    def get_exposure(self):
+    def get_np.exposure(self):
         return 1.
     
 class EnergySpectrum1DRev(Spectrum1DRev):
@@ -3973,14 +3973,14 @@ class FitLocalLinesScW(ddosa.DataAnalysis):
 
         slope, intercept, r_value, p_value, std_err = stats.linregress(np.log(ec[~on_region]),np.log(counts[~on_region])) 
         
-        bkg=exp(intercept+np.log(ec)*slope)
+        bkg=np.exp(intercept+np.log(ec)*slope)
         
 
         guess_norm=max(counts-bkg)
 
         def line_model_basic(x,p):
             N,x0,w,wa=p
-            return exp(-(x-x0)**2/(w*(1+wa*x/x0))**2/2.)*N
+            return np.exp(-(x-x0)**2/(w*(1+wa*x/x0))**2/2.)*N
 
         if composite is None:
             line_model=line_model_basic
@@ -3994,7 +3994,7 @@ class FitLocalLinesScW(ddosa.DataAnalysis):
             
         def line_model_fx0(x,p):
             N,w,wa=p
-            return line_model(x,[N,x0_fixed,w,wa])#exp(-(x-x0_fixed)**2/(w*(1+wa*x/x0_fixed))**2/2.)*N
+            return line_model(x,[N,x0_fixed,w,wa])#np.exp(-(x-x0_fixed)**2/(w*(1+wa*x/x0_fixed))**2/2.)*N
 
         def residual_func(model,p):
             return sum(((counts-bkg-model(ec,p))/err)**2)
@@ -4039,7 +4039,7 @@ class FitLocalLinesScW(ddosa.DataAnalysis):
             if x0_fixed>ec[-1]:
                 break
             
-            if isnan(x0_fixed):
+            if np.isnan(x0_fixed):
                 break
         x0_upper_limit=x0_fixed
 
@@ -4064,7 +4064,7 @@ class FitLocalLinesScW(ddosa.DataAnalysis):
                 break
             if x0_fixed<ec[0]:
                 break
-            if isnan(x0_fixed):
+            if np.isnan(x0_fixed):
                 break
         x0_lower_limit=x0_fixed
 
@@ -4122,7 +4122,7 @@ class FitLocalLinesMergedP0(FitLocalLinesScW):
     #input_spectrum=EnergySpectrum1DRevP2
 
     def get_ebins(self):
-        return linspace(0,2048,2048)
+        return np.linspace(0,2048,2048)
 
     def get_h2_energy_pi(self):
         print(dir(self.input_spectrum))
@@ -4175,7 +4175,7 @@ class Spectrum1DCorrected(Spectrum1DVirtual):
     def get_h2(self):
         return self.get_h2_energy_pi()[0].data
 
-    def get_exposure(self):
+    def get_np.exposure(self):
         return 1
     
     def get_ebins(self):
@@ -4197,7 +4197,7 @@ class Spectrum1DCorrected(Spectrum1DVirtual):
 
     def main(self):
         ebins=self.get_ebins()
-        exposure=self.get_exposure()
+        np.exposure=self.get_np.exposure()
         
         e1=ebins[:-1]
         e2=ebins[1:]
@@ -4209,7 +4209,7 @@ class Spectrum1DCorrected(Spectrum1DVirtual):
         h2=self.get_h2()
         for rt1,rt2 in [(16,50),(16,116),(50,80),(80,116),(50,116)]:
             h1=h2[:,rt1:rt2].sum(axis=1).astype(float64)
-            pha=ogip.spec.PHA(h1,sqrt(h1),exposure,response=rmf_fn)
+            pha=ogip.spec.PHA(h1,sqrt(h1),np.exposure,response=rmf_fn)
             fn="spectrum_rt_%.5lg_%.5lg.fits"%(rt1,rt2)
             pha.write(fn)
             setattr(self,"spectrum_%.5lg_%.5lg"%(rt1,rt2),da.DataFile(fn))
@@ -4301,8 +4301,8 @@ class Response2D(ddosa.DataAnalysis):
         r3d=self.input_biparmodel.bipar_model.response3d(None,grouping=0.01)
         r3d.loadfrom(self.input_lut2.response_3d.get_path())
         
-        energies=linspace(0,1024.,1024)
-        #energies=linspace(1,1500**0.5,300)**2
+        energies=np.linspace(0,1024.,1024)
+        #energies=np.linspace(1,1500**0.5,300)**2
 
         keys=[255,116,90,100,50,(16,116),(16,50),125,135,145,155,165]
         r2s,files=self.input_biparmodel.bipar_model.response_response(lut2,r3d,energies,savefits=True,limitrt=keys)
@@ -4328,7 +4328,7 @@ class InspectLUT2(da.DataAnalysis):
 
         print(lut2)
 
-        #ebins=linspace(0,1000,2001)
+        #ebins=np.linspace(0,1000,2001)
         ebins=np.logspace(1,np.log10(2048),4800)
         inverted=[]
         for i in range(256):
@@ -4374,7 +4374,7 @@ class Response(da.DataAnalysis):
 
             r2d[:10,:]=0
             r2d[:,:10]=0
-            r2d[isnan(r2d)]=0
+            r2d[np.isnan(r2d)]=0
 
             print(r2d.shape)
 
@@ -4384,7 +4384,7 @@ class Response(da.DataAnalysis):
             arf_l2=r2d.sum(axis=1)
             arf_l2_interpolated=i1d(arf_l2_e,arf_l2,bounds_error=False)(arf_e0)
         
-            arf_l2_interpolated[isnan(arf_l2_interpolated)]=0
+            arf_l2_interpolated[np.isnan(arf_l2_interpolated)]=0
 
             np.savetxt("arf%s1.txt"%key,arf_0)
             np.savetxt("arf%s2.txt"%key,arf_0)
@@ -4436,7 +4436,7 @@ class EfficiencyUpdate(da.DataAnalysis):
 
             #r2d[:40,:]=0
             #r2d[:,:40]=0
-            r2d[isnan(r2d)]=0
+            r2d[np.isnan(r2d)]=0
 
             print(r2d.shape)
 
@@ -4454,7 +4454,7 @@ class EfficiencyUpdate(da.DataAnalysis):
             effi_l2_interpolated/=norm
             effi_l2_interpolated[spec_energies<50]=1
         
-            effi_l2_interpolated[isnan(effi_l2_interpolated)]=0
+            effi_l2_interpolated[np.isnan(effi_l2_interpolated)]=0
 
             effi_hdu = pyfits.BinTableHDU.from_columns([
                      pyfits.Column(name='ENERGY', format='E', array=spec_energies),
@@ -4470,7 +4470,7 @@ class EfficiencyUpdate(da.DataAnalysis):
 
             for i in range(rmf_matrix_orig.shape[0]):
                 n=rmf_matrix_orig[i]*effi_l2_interpolated
-                n[isnan(n)]=0
+                n[np.isnan(n)]=0
                 n[isinf(n)]=0
                 rmf_f['MATRIX'].data['MATRIX'][i]=n
                 #print n
@@ -4511,7 +4511,7 @@ class SynthBiparFrom1D(da.DataAnalysis):
         spec_f=interp1d(ec,spec/(e2-e1),fill_value=0,bounds_error=False)
 
         result=None
-        for en in linspace(1,1500**0.5,200)**2:
+        for en in np.linspace(1,1500**0.5,200)**2:
             amp=spec_f(en)
             print(en,amp)
             r=r3d.get_energy(en,disable_ai=False)
@@ -4529,7 +4529,7 @@ class SynthBiparFrom1D(da.DataAnalysis):
 
             #if abs(en-511)<2: r=r*10
 
-            r[isnan(r)]=0
+            r[np.isnan(r)]=0
             r[isinf(r)]=0
             result+=r
 
@@ -4767,17 +4767,17 @@ class BinEventsVirtual(ddosa.BinEventsVirtual):
 
     def post_process(self):
         if hasattr(self,'input_ltdata'):
-            iy,iz=meshgrid(np.arange(128),np.arange(128))
+            iy,iz=np.meshgrid(np.arange(128),np.arange(128))
             y=iy+(iy/32)*2
             z=iz+(iz/64)*2
 
-            ltmap_pixels=loadtxt(self.input_ltdata.ltmap.get_path())
+            ltmap_pixels=np.loadtxt(self.input_ltdata.ltmap.get_path())
             iltmap=np.histogram2d(ltmap_pixels[:,1],ltmap_pixels[:,0],weights=ltmap_pixels[:,3],bins=(np.arange(129)-0.5,np.arange(129)-0.5))[0]
 
             ltmap=zeros((134,130))
             ltmap[y,z]=iltmap[iy,iz]
-            lt_lim=percentile(ltmap,90)
-            lth=np.histogram(ltmap,linspace(ltmap[ltmap>0].min(),lt_lim,30))
+            lt_lim=np.percentile(ltmap,90)
+            lth=np.histogram(ltmap,np.linspace(ltmap[ltmap>0].min(),lt_lim,30))
             ltbins=array(list(zip(lth[1][:-1],lth[1][1:])))
             print("lt bins:",ltbins)
             pyfits.PrimaryHDU(ltmap).writeto("ltmap.fits",clobber=True)
@@ -4789,9 +4789,9 @@ class BinEventsVirtual(ddosa.BinEventsVirtual):
                 assert(self.ltfrac!=0)
                 assert(abs(self.ltfrac)<=1)
                 if self.ltfrac>0:
-                    mask=iltmap<=percentile(ltmap.flatten(),self.ltfrac*100)
+                    mask=iltmap<=np.percentile(ltmap.flatten(),self.ltfrac*100)
                 else:
-                    mask=iltmap>=percentile(ltmap.flatten(),100+self.ltfrac*100)
+                    mask=iltmap>=np.percentile(ltmap.flatten(),100+self.ltfrac*100)
 
                 print("ltfraction",iltmap[mask].min(),iltmap[mask].max(),iltmap[mask].max(),sum(mask))
 
@@ -4966,7 +4966,7 @@ class BiSpectrum(ddosa.DataAnalysis):
         
         #[[f.header['E_MAX'],f.data.max()] for f in open(self.input_maps.corr)[2:]]
 
-        self.exposure=pyfits.open(self.input_spectrum.spectrum.get_path())[2].header['EXPOSURE']
+        self.np.exposure=pyfits.open(self.input_spectrum.spectrum.get_path())[2].header['EXPOSURE']
 
 class BiSpectrumProcessingSummary(ddosa.DataAnalysis):
     run_for_hashe=True
@@ -5009,7 +5009,7 @@ class BiSpectrumMerged(ddosa.DataAnalysis):
         sb_pha1_pi=None
         s_pha1_pi=None
         b_pha1_pi=None
-        exposure=0
+        np.exposure=0
         onaxis_corr=None
         ebins=None
         for bs in self.input_list.thelist:
@@ -5021,7 +5021,7 @@ class BiSpectrumMerged(ddosa.DataAnalysis):
             if ebins is None:
                 ebins=bs.ebins
     
-            exposure+=bs.exposure
+            np.exposure+=bs.np.exposure
             e_p=pyfits.open(bs.sb_energy_pi.get_path())[0].data
 
             if sb_energy_pi is None:
@@ -5074,8 +5074,8 @@ class BiSpectrumMerged(ddosa.DataAnalysis):
         me1,me2=a['ENERG_LO'],a['ENERG_HI']
 
        # ebins=np.logspace(1,3,100)
-       # a,b=meshgrid(ebins[:-1],me1)
-       # diagonal=exp(-(a-b)**2/2)
+       # a,b=np.meshgrid(ebins[:-1],me1)
+       # diagonal=np.exp(-(a-b)**2/2)
 
        # ogip.spec.RMF(ebins[:-1],ebins[1:],me1,me2,diagonal).write("response_diag_np.log100.fits")
         
@@ -5084,10 +5084,10 @@ class BiSpectrumMerged(ddosa.DataAnalysis):
         s1d=sb_energy_pi[:,16:116].sum(axis=1)
         s1dt=s_energy_pi[:,16:116].sum(axis=1)
 
-        self.exposure=exposure
+        self.np.exposure=np.exposure
 
-        ogip.spec.PHAI(s1d*binw,sqrt(s1dt)*binw,exposure).write("energy_spectrum.fits")
-        ogip.spec.PHAI(s1d*binw*onaxis_corr,sqrt(s1dt)*binw*onaxis_corr,exposure).write("energy_spectrum_noonaxis.fits")
+        ogip.spec.PHAI(s1d*binw,sqrt(s1dt)*binw,np.exposure).write("energy_spectrum.fits")
+        ogip.spec.PHAI(s1d*binw*onaxis_corr,sqrt(s1dt)*binw*onaxis_corr,np.exposure).write("energy_spectrum_noonaxis.fits")
         
         self.energy_spectrum=da.DataFile("energy_spectrum.fits")
 
@@ -5114,7 +5114,7 @@ class ReconstructBipar(da.DataAnalysis):
         pha1_pi=pyfits.open(self.input_bipar.sb_pha1_pi_merged.get_path())[0].data
         self.reconstruct(pha1_pi,"source",new_energies,binw)
         
-        new_energies=linspace(0,1024,1024)
+        new_energies=np.linspace(0,1024,1024)
         binw=new_energies*0+0.5
         pha1_pi=pyfits.open(self.input_bipar.b_pha1_pi_merged.get_path())[0].data
         self.reconstruct(pha1_pi,"background",new_energies,binw)
@@ -5124,9 +5124,9 @@ class ReconstructBipar(da.DataAnalysis):
        # pha1_pi=self.input_bipar.get_h2_pha1_pi()
 
         try:
-            exposure=self.input_bipar.exposure
+            np.exposure=self.input_bipar.np.exposure
         except:
-            exposure=100000
+            np.exposure=100000
 
  #       pha,rt=np.mgrid(np.arange(2048),np.arange(256))
 
@@ -5142,7 +5142,7 @@ class ReconstructBipar(da.DataAnalysis):
             spec_row=pha1_pi[:,rt]
             energy_row=lut2[:,rt]
 
-            energy_row=energy_row - 2.*((rt-20.)/(80-20))**3 # * (exp(-(energy_row-60)**2/50))
+            energy_row=energy_row - 2.*((rt-20.)/(80-20))**3 # * (np.exp(-(energy_row-60)**2/50))
 
             energy_row=energy_row[:-1]
 
@@ -5159,7 +5159,7 @@ class ReconstructBipar(da.DataAnalysis):
         s1d=energy_pi[:,16:116].sum(axis=1)
         s1dt=energy_pi[:,16:116].sum(axis=1) # not same
 
-        ogip.spec.PHAI(s1d*binw,sqrt(s1dt)*binw,exposure/10).write("energy_spectrum_recon_%s.fits"%key)
+        ogip.spec.PHAI(s1d*binw,sqrt(s1dt)*binw,np.exposure/10).write("energy_spectrum_recon_%s.fits"%key)
 
 
 
@@ -5301,7 +5301,7 @@ class BinBackgroundMergedP3(BinBackgroundMergedP2):
     #output_tag="P3"
     
 
-# carf carf=lambda x:(1+0.15/(1+exp(-((x-60)/5))))
+# carf carf=lambda x:(1+0.15/(1+np.exp(-((x-60)/5))))
 
 class StudySpectrumRevP2(ddosa.DataAnalysis):
     input_spectrum=BinBackgroundRevP2
